@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 
@@ -11,8 +12,20 @@ import (
 )
 
 func main() {
-	resPath := "./resources/api-rest.httpr"
-	port := 8977
+	var resPath string
+	var port int
+
+	flag.StringVar(&resPath, "file", "", "Path to the HTTP response file to parse (required)")
+	flag.StringVar(&resPath, "f", "", "Path to the HTTP response file to parse (required, shorthand)")
+	flag.IntVar(&port, "port", 8977, "Port number for the HTTP server")
+	flag.IntVar(&port, "p", 8977, "Port number for the HTTP server (shorthand)")
+	flag.Parse()
+
+	if resPath == "" {
+		fmt.Println("Error: file path is required. Use -file or -f to specify the HTTP response file.")
+		flag.Usage()
+		os.Exit(1)
+	}
 	res, err := parser.Parse(resPath)
 	if err != nil {
 		fmt.Printf("Erro ao fazer o parse do arquivo: %v\n", err)
