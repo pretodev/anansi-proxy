@@ -18,7 +18,11 @@ func New() *StateManager {
 func (s *StateManager) SetIndex(index int) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.index = index
+	if index < 0 {
+		s.index = 0
+	} else {
+		s.index = index
+	}
 }
 
 func (s *StateManager) Index() int {

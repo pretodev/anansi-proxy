@@ -28,12 +28,12 @@ func main() {
 	}
 	res, err := parser.Parse(resPath)
 	if err != nil {
-		fmt.Printf("Erro ao fazer o parse do arquivo: %v\n", err)
+		fmt.Printf("Error parsing file: %v\n", err)
 		os.Exit(1)
 	}
 
 	if len(res) == 0 {
-		fmt.Println("Nenhuma resposta encontrada no arquivo.")
+		fmt.Println("No responses found in the file.")
 		os.Exit(0)
 	}
 
@@ -42,13 +42,13 @@ func main() {
 	httpSrv := server.New(sm, res)
 	go func() {
 		if err := httpSrv.Serve(port); err != nil {
-			fmt.Printf("Erro no servidor HTTP: %v\n", err)
+			fmt.Printf("HTTP server error: %v\n", err)
 			os.Exit(1)
 		}
 	}()
 
 	if err := ui.Render(sm, res); err != nil {
-		fmt.Printf("Error na UI: %c\n", err)
+		fmt.Printf("UI error: %v\n", err)
 		os.Exit(1)
 	}
 }

@@ -13,7 +13,7 @@ import (
 
 func Render(sm *state.StateManager, res []parser.Response) error {
 	if len(res) == 0 {
-		fmt.Println("Nenhuma resposta encontrada para exibir.")
+		fmt.Println("No responses found to display.")
 		return nil
 	}
 
@@ -55,12 +55,12 @@ func initialModel(res []parser.Response, sm *state.StateManager) model {
 	}
 }
 
-// Init é a primeira função a ser executada.
+// Init is the first function to be executed.
 func (m model) Init() tea.Cmd {
 	return nil
 }
 
-// Update é chamada quando "algo acontece", como o pressionar de uma tecla.
+// Update is called when "something happens", like a key press.
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -82,18 +82,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// View renderiza a UI com base no estado atual do model.
+// View renders the UI based on the current model state.
 func (m model) View() string {
 	var b strings.Builder
 
-	b.WriteString("Selecione uma resposta para o servidor:\n\n")
+	b.WriteString("Select a response for the server:\n\n")
 
 	for i, res := range m.responses {
-		cursor := "  " // Não selecionado
+		cursor := "  " // Not selected
 		line := fmt.Sprintf("[%d] %s", res.StatusCode, res.Title)
 
 		if m.cursor == i {
-			cursor = "> " // Selecionado
+			cursor = "> " // Selected
 			line = selectedItemStyle.Render(line)
 		}
 

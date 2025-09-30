@@ -2,6 +2,7 @@ package parser
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -17,7 +18,11 @@ type Response struct {
 func Parse(filePath string) ([]Response, error) {
 	content, err := readFile(filePath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read file '%s': %w", filePath, err)
+	}
+
+	if strings.TrimSpace(content) == "" {
+		return nil, fmt.Errorf("file '%s' is empty", filePath)
 	}
 
 	blocks := strings.SplitSeq(content, "###")
@@ -29,9 +34,13 @@ func Parse(filePath string) ([]Response, error) {
 		}
 		res, err := parseBlock(block)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to parse block: %w", err)
 		}
 		responses = append(responses, res)
+	}
+
+	if len(responses) == 0 {
+		return nil, fmt.Errorf("no valid responses found in file '%s'", filePath)
 	}
 
 	return responses, nil
@@ -87,10 +96,16 @@ func parseHeader(res *Response, parts []string) error {
 	case "status-code":
 		code, err := strconv.Atoi(value)
 		if err != nil {
-			return err
+			return fmt.Errorf("invalid status code '%s': %w", value, err)
+		}
+		if code < 100 || code > 599 {
+			return fmt.Errorf("status code %d is out of valid range (100-599)", code)
 		}
 		res.StatusCode = code
 	case "content-type":
+		if value == "" {
+			return fmt.Errorf("content-type cannot be empty")
+		}
 		res.ContentType = value
 	}
 
@@ -100,7 +115,7 @@ func parseHeader(res *Response, parts []string) error {
 func readFile(filePath string) (string, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to open file '%s': %w", filePath, err)
 	}
 	defer file.Close()
 
@@ -110,7 +125,7 @@ func readFile(filePath string) (string, error) {
 		content += scanner.Text() + "\n"
 	}
 	if err := scanner.Err(); err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to read file '%s': %w", filePath, err)
 	}
 	return content, nil
 }
