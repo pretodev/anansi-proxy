@@ -1,0 +1,45 @@
+POST /api/user
+
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://example.com/user"
+           xmlns:tns="http://example.com/user"
+           elementFormDefault="qualified">
+
+  <xs:element name="user" type="tns:UserType"/>
+  
+  <xs:complexType name="UserType">
+    <xs:sequence>
+      <xs:element name="name" type="xs:string"/>
+      <xs:element name="age" type="xs:int"/>
+      <xs:element name="email" type="tns:EmailType"/>
+      <xs:element name="address" type="tns:AddressType" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+  
+  <xs:simpleType name="EmailType">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[^@]+@[^@]+\.[^@]+"/>
+    </xs:restriction>
+  </xs:simpleType>
+  
+  <xs:complexType name="AddressType">
+    <xs:sequence>
+      <xs:element name="street" type="xs:string"/>
+      <xs:element name="city" type="xs:string"/>
+      <xs:element name="zipCode" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+  
+</xs:schema>
+
+### Success: User created
+Status-Code: 201
+Content-Type: application/xml
+
+<?xml version="1.0" encoding="UTF-8"?>
+<user xmlns="http://example.com/user">
+    <name>John Doe</name>
+    <age>30</age>
+    <email>john.doe@example.com</email>
+</user>
