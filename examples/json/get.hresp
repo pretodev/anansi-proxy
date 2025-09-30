@@ -1,0 +1,36 @@
+GET /api/cars/:id
+
+### Success: List all cars
+Status-Code: 201
+Content-Type: application/json
+
+[
+  {
+    "id": 1,
+    "make": "Toyota",
+    "model": "Camry",
+    "year": 2022,
+    "color": "Silver"
+  },
+  {
+    "id": 2,
+    "make": "Honda",
+    "model": "Civic",
+    "year": 2021,
+    "color": "Blue"
+  },
+  {
+    "id": 3,
+    "make": "Ford",
+    "model": "Mustang",
+    "year": 2020,
+    "color": "Red"
+  },
+  {
+    "id": 4,
+    "make": "Chevrolet",
+    "model": "Malibu",
+    "year": 2023,
+    "color": "Black"
+  },
+]
