@@ -1,9 +1,8 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/pretodev/anansi-proxy/internal/parser"
+	"github.com/pretodev/anansi-proxy/internal/ui"
 )
 
 func main() {
@@ -13,5 +12,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(res)
+
+	if err := ui.Render(res); err != nil {
+		panic(err)
+	}
 }
