@@ -1,0 +1,17 @@
+### Sucesso na requisicao
+
+{
+  "message": "success"
+}
+
+### Success: Text message
+
+Success
+
+### Error: Not found resource
+Status-Code: 404
+Content-Type: application/json
+
+{
+  "message": "Resource not found"
+}
