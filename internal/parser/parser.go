@@ -9,10 +9,13 @@ import (
 )
 
 type Response struct {
-	Title       string
-	Body        string
-	ContentType string
-	StatusCode  int
+	Title         string
+	Body          string
+	ContentType   string
+	StatusCode    int
+	Method        string
+	Path          string
+	RequestSchema string
 }
 
 func Parse(filePath string) ([]Response, error) {
@@ -25,7 +28,20 @@ func Parse(filePath string) ([]Response, error) {
 		return nil, fmt.Errorf("file '%s' is empty", filePath)
 	}
 
-	blocks := strings.SplitSeq(content, "###")
+	parts := strings.SplitN(content, "###", 2)
+	var method, path, requestSchema string
+
+	if len(parts) > 1 {
+		requestSection := strings.TrimSpace(parts[0])
+		method, path, requestSchema = parseRequestSection(requestSection)
+	}
+
+	responseContent := content
+	if len(parts) > 1 {
+		responseContent = "###" + parts[1]
+	}
+
+	blocks := strings.SplitSeq(responseContent, "###")
 
 	var responses []Response
 	for block := range blocks {
@@ -36,6 +52,9 @@ func Parse(filePath string) ([]Response, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse block: %w", err)
 		}
+		res.Method = method
+		res.Path = path
+		res.RequestSchema = requestSchema
 		responses = append(responses, res)
 	}
 
@@ -110,6 +129,44 @@ func parseHeader(res *Response, parts []string) error {
 	}
 
 	return nil
+}
+
+func parseRequestSection(requestSection string) (method, path, requestSchema string) {
+	lines := strings.Split(requestSection, "\n")
+
+	if len(lines) > 0 {
+		firstLine := strings.TrimSpace(lines[0])
+		parts := strings.Fields(firstLine)
+		if len(parts) >= 2 {
+			method = parts[0]
+			path = parts[1]
+		}
+	}
+
+	var schemaLines []string
+	inSchema := false
+
+	for i := 1; i < len(lines); i++ {
+		line := strings.TrimSpace(lines[i])
+
+		if strings.Contains(line, ":") && !inSchema {
+			continue
+		}
+		if line == "" && !inSchema {
+			inSchema = true
+			continue
+		}
+		if inSchema {
+			schemaLines = append(schemaLines, lines[i])
+		}
+	}
+
+	if len(schemaLines) > 0 {
+		requestSchema = strings.Join(schemaLines, "\n")
+		requestSchema = strings.TrimSpace(requestSchema)
+	}
+
+	return method, path, requestSchema
 }
 
 func readFile(filePath string) (string, error) {
