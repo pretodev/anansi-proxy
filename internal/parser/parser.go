@@ -14,10 +14,10 @@ type Response struct {
 	StatusCode  int
 }
 
-func Parse(filePath string) []Response {
+func Parse(filePath string) ([]Response, error) {
 	content, err := readFile(filePath)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	blocks := strings.SplitSeq(content, "###")
@@ -29,12 +29,12 @@ func Parse(filePath string) []Response {
 		}
 		res, err := parseBlock(block)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		responses = append(responses, res)
 	}
 
-	return responses
+	return responses, nil
 }
 
 func parseBlock(block string) (Response, error) {

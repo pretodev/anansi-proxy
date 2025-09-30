@@ -9,6 +9,9 @@ import (
 func main() {
 	resPath := "./resources/api-rest.httpr"
 
-	res := parser.Parse(resPath)
+	res, err := parser.Parse(resPath)
+	if err != nil {
+		panic(err)
+	}
 	fmt.Println(res)
 }
