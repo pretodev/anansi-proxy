@@ -1,5 +1,5 @@
-POST /api/config
-Content-Type: application/yaml
+POST /config
+Content-Type: text/yaml
 
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
@@ -35,7 +35,7 @@ Content-Type: application/yaml
 }
 
 ### Success: Actual YAML data
-Content-Type: application/yaml
+Content-Type: text/yaml
 
 server: 
   host: "localhost"

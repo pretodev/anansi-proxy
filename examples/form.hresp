@@ -1,0 +1,62 @@
+PUT /user
+Content-Type: application/x-www-form-urlencoded
+
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "User Registration Form",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 100,
+      "pattern": "^[a-zA-Z\\s]+$"
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "maxLength": 255
+    },
+    "password": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 128,
+      "description": "Password must contain at least 8 characters"
+    },
+    "age": {
+      "type": "integer",
+      "minimum": 13,
+      "maximum": 120
+    },
+    "terms_accepted": {
+      "type": "boolean",
+      "const": true
+    }
+  },
+  "required": ["name", "email", "password", "terms_accepted"]
+}
+
+### Success: User created
+Status-Code: 201
+Content-Type: application/json
+
+{
+  "id": 12345,
+  "name": "John Doe",
+  "email": "john.doe@example.com",
+  "created_at": "2024-01-15T10:30:00Z"
+}
+
+### Error: Validation failed
+Status-Code: 422
+Content-Type: application/json
+
+{
+  "message": "Validation failed",
+  "errors": [
+    {
+      "field": "email",
+      "message": "Email address is already in use"
+    }
+  ]
+}

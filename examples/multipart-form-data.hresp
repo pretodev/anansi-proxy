@@ -1,0 +1,56 @@
+PATCH /user/image
+Content-Type: multipart/form-data; boundary=PieBoundary123456789012345678901234567
+
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "User Image Upload",
+  "type": "object",
+  "properties": {
+    "image": {
+      "type": "string",
+      "format": "binary",
+      "description": "Image file (JPEG, PNG, GIF, WebP)"
+    },
+    "alt_text": {
+      "type": "string",
+      "description": "Alternative text for the image",
+      "maxLength": 255
+    },
+    "crop_settings": {
+      "type": "object",
+      "properties": {
+        "x": {"type": "integer", "minimum": 0},
+        "y": {"type": "integer", "minimum": 0},
+        "width": {"type": "integer", "minimum": 1},
+        "height": {"type": "integer", "minimum": 1}
+      }
+    }
+  },
+  "required": ["image"]
+}
+
+### Success: Image updated
+Status-Code: 200
+Content-Type: application/json
+
+{
+  "message": "User image updated successfully",
+  "image_url": "https://example.com/images/user/12345.jpg",
+  "updated_at": "2024-01-15T10:30:00Z"
+}
+
+### Error: File too large
+Status-Code: 413
+Content-Type: application/json
+
+{
+  "message": "Image file size exceeds maximum limit of 5MB"
+}
+
+### Error: Invalid file type
+Status-Code: 415
+Content-Type: application/json
+
+{
+  "message": "Unsupported media type. Only JPEG, PNG, GIF, and WebP are allowed"
+}

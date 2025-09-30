@@ -1,0 +1,39 @@
+PATCH /car/:id/image
+Content-Type: application/octet-stream
+
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Raw Image Binary Data",
+  "type": "string",
+  "format": "binary",
+  "description": "Raw binary image data stream",
+  "contentEncoding": "binary",
+  "contentMediaType": "image/*"
+}
+
+### Success: Image updated
+Status-Code: 200
+Content-Type: application/json
+
+{
+  "message": "User image updated successfully",
+  "image_url": "https://example.com/images/user/12345.jpg",
+  "size": 2048576,
+  "updated_at": "2024-01-15T10:30:00Z"
+}
+
+### Error: Invalid binary data
+Status-Code: 400
+Content-Type: application/json
+
+{
+  "message": "Invalid binary image data"
+}
+
+### Error: File too large
+Status-Code: 413
+Content-Type: application/json
+
+{
+  "message": "Image file size exceeds maximum limit of 10MB"
+}

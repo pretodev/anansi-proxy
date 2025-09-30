@@ -1,0 +1,25 @@
+POST /text
+Content-Type: text/plain; charset=utf-8
+
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Plain Text Content",
+  "type": "string",
+  "description": "Plain text content with UTF-8 encoding",
+  "minLength": 1,
+  "maxLength": 10000
+}
+
+### Success: Text processed
+Status-Code: 200
+Content-Type: text/plain; charset=utf-8
+
+Text successfully processed
+
+### Error: Invalid content
+Status-Code: 400
+Content-Type: application/json
+
+{
+  "message": "Invalid text content provided"
+}

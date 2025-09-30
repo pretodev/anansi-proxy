@@ -1,4 +1,4 @@
-GET /api/cars/:id
+GET /cars
 
 ### Success: List all cars
 Status-Code: 201
