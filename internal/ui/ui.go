@@ -8,15 +8,16 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/pretodev/anansi-proxy/internal/parser"
+	"github.com/pretodev/anansi-proxy/internal/state"
 )
 
-func Render(res []parser.Response) error {
+func Render(sm *state.StateManager, res []parser.Response) error {
 	if len(res) == 0 {
 		fmt.Println("Nenhuma resposta encontrada para exibir.")
 		return nil
 	}
 
-	p := tea.NewProgram(initialModel(res))
+	p := tea.NewProgram(initialModel(res, sm))
 	if _, err := p.Run(); err != nil {
 		return err
 	}
@@ -29,9 +30,10 @@ var (
 )
 
 type model struct {
-	responses []parser.Response
-	cursor    int
-	keys      keyMap
+	responses    []parser.Response
+	cursor       int
+	keys         keyMap
+	stateManager *state.StateManager
 }
 
 type keyMap struct {
@@ -40,10 +42,11 @@ type keyMap struct {
 	Quit key.Binding
 }
 
-func initialModel(res []parser.Response) model {
+func initialModel(res []parser.Response, sm *state.StateManager) model {
 	return model{
-		responses: res,
-		cursor:    0,
+		responses:    res,
+		cursor:       0,
+		stateManager: sm,
 		keys: keyMap{
 			Up:   key.NewBinding(key.WithKeys("up", "k"), key.WithHelp("↑/k", "move up")),
 			Down: key.NewBinding(key.WithKeys("down", "j"), key.WithHelp("↓/j", "move down")),
@@ -74,6 +77,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 	}
+
+	m.stateManager.SetIndex(m.cursor)
 	return m, nil
 }
 
