@@ -14,11 +14,13 @@ import (
 func main() {
 	var resPath string
 	var port int
+	var interactive bool
 
 	flag.StringVar(&resPath, "file", "", "Path to the HTTP response file to parse (required)")
 	flag.StringVar(&resPath, "f", "", "Path to the HTTP response file to parse (required, shorthand)")
 	flag.IntVar(&port, "port", 8977, "Port number for the HTTP server")
 	flag.IntVar(&port, "p", 8977, "Port number for the HTTP server (shorthand)")
+	flag.BoolVar(&interactive, "it", false, "Interactive mode - display response selection UI")
 	flag.Parse()
 
 	if resPath == "" {
@@ -39,6 +41,10 @@ func main() {
 
 	sm := state.New()
 
+	if !interactive {
+		sm.SetIndex(0)
+	}
+
 	httpSrv := server.New(sm, res)
 	go func() {
 		if err := httpSrv.Serve(port); err != nil {
@@ -47,8 +53,13 @@ func main() {
 		}
 	}()
 
-	if err := ui.Render(sm, res); err != nil {
-		fmt.Printf("UI error: %v\n", err)
-		os.Exit(1)
+	if interactive {
+		if err := ui.Render(sm, res); err != nil {
+			fmt.Printf("UI error: %v\n", err)
+			os.Exit(1)
+		}
+	} else {
+		fmt.Printf("Server running on port %d using response: [%d] %s\n", port, res[0].StatusCode, res[0].Title)
+		select {}
 	}
 }
