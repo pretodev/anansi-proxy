@@ -7,11 +7,11 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/pretodev/anansi-proxy/internal/parser"
+	"github.com/pretodev/anansi-proxy/internal/endpoint"
 	"github.com/pretodev/anansi-proxy/internal/state"
 )
 
-func Render(sm *state.StateManager, endpoint *parser.EndpointSchema) error {
+func Render(sm *state.StateManager, endpoint *endpoint.EndpointSchema) error {
 	p := tea.NewProgram(initialModel(sm, endpoint))
 	if _, err := p.Run(); err != nil {
 		return err
@@ -25,7 +25,7 @@ var (
 )
 
 type model struct {
-	endpoint     *parser.EndpointSchema
+	endpoint     *endpoint.EndpointSchema
 	cursor       int
 	keys         keyMap
 	stateManager *state.StateManager
@@ -37,7 +37,7 @@ type keyMap struct {
 	Quit key.Binding
 }
 
-func initialModel(sm *state.StateManager, endpoint *parser.EndpointSchema) model {
+func initialModel(sm *state.StateManager, endpoint *endpoint.EndpointSchema) model {
 	return model{
 		endpoint:     endpoint,
 		cursor:       0,

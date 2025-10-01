@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/pretodev/anansi-proxy/internal/parser"
+	"github.com/pretodev/anansi-proxy/internal/endpoint"
 	"github.com/pretodev/anansi-proxy/internal/server"
 	"github.com/pretodev/anansi-proxy/internal/state"
 	"github.com/pretodev/anansi-proxy/internal/ui"
@@ -28,7 +28,7 @@ func main() {
 		flag.Usage()
 		os.Exit(1)
 	}
-	endpoint, err := parser.Parse(resPath)
+	endpoint, err := endpoint.Parse(resPath)
 	if err != nil {
 		fmt.Printf("Error parsing file: %v\n", err)
 		os.Exit(1)

@@ -6,16 +6,16 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/pretodev/anansi-proxy/internal/parser"
+	"github.com/pretodev/anansi-proxy/internal/endpoint"
 	"github.com/pretodev/anansi-proxy/internal/state"
 )
 
 type Server struct {
 	state    *state.StateManager
-	endpoint parser.EndpointSchema
+	endpoint endpoint.EndpointSchema
 }
 
-func New(sm *state.StateManager, endpoint *parser.EndpointSchema) *Server {
+func New(sm *state.StateManager, endpoint *endpoint.EndpointSchema) *Server {
 	return &Server{
 		state:    sm,
 		endpoint: *endpoint,
