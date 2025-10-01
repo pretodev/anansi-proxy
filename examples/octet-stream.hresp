@@ -1,4 +1,4 @@
-PATCH /car/:id/image
+PATCH /car/{id}/image
 Content-Type: application/octet-stream
 
 {

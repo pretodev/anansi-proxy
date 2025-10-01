@@ -1,0 +1,114 @@
+GET /api/v1/users/{userId}/posts?page=1&limit=10&sort=created_at&order=desc&status=published&category=tech
+
+### Success: Posts retrieved successfully
+Status-Code: 200
+Content-Type: application/json
+
+{
+  "data": [
+    {
+      "id": 101,
+      "title": "Understanding REST APIs",
+      "content": "A comprehensive guide to REST API design...",
+      "status": "published",
+      "category": "tech",
+      "author": {
+        "id": 123,
+        "name": "John Doe",
+        "email": "john.doe@example.com"
+      },
+      "created_at": "2024-01-15T10:30:00Z",
+      "updated_at": "2024-01-15T14:20:00Z",
+      "tags": ["api", "rest", "web-development"]
+    },
+    {
+      "id": 102,
+      "title": "Advanced JavaScript Patterns",
+      "content": "Exploring modern JavaScript design patterns...",
+      "status": "published",
+      "category": "tech",
+      "author": {
+        "id": 123,
+        "name": "John Doe",
+        "email": "john.doe@example.com"
+      },
+      "created_at": "2024-01-14T09:15:00Z",
+      "updated_at": "2024-01-14T16:45:00Z",
+      "tags": ["javascript", "patterns", "programming"]
+    }
+  ],
+  "pagination": {
+    "current_page": 1,
+    "per_page": 10,
+    "total_pages": 5,
+    "total_items": 47,
+    "has_next": true,
+    "has_previous": false
+  },
+  "filters": {
+    "status": "published",
+    "category": "tech",
+    "sort": "created_at",
+    "order": "desc"
+  }
+}
+
+### Error: User not found
+Status-Code: 404
+Content-Type: application/json
+
+{
+  "error": {
+    "code": "USER_NOT_FOUND",
+    "message": "User with ID 123 not found",
+    "details": {
+      "user_id": 123,
+      "resource": "users"
+    }
+  }
+}
+
+### Error: Invalid query parameters
+Status-Code: 400
+Content-Type: application/json
+
+{
+  "error": {
+    "code": "INVALID_QUERY_PARAMETERS",
+    "message": "One or more query parameters are invalid",
+    "details": {
+      "invalid_parameters": [
+        {
+          "parameter": "page",
+          "value": "0",
+          "message": "Page number must be greater than 0"
+        },
+        {
+          "parameter": "limit",
+          "value": "101",
+          "message": "Limit must be between 1 and 100"
+        },
+        {
+          "parameter": "sort",
+          "value": "invalid_field",
+          "message": "Sort field must be one of: created_at, updated_at, title"
+        }
+      ]
+    }
+  }
+}
+
+### Error: Unauthorized access
+Status-Code: 403
+Content-Type: application/json
+
+{
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "You don't have permission to access posts for this user",
+    "details": {
+      "user_id": 123,
+      "required_permission": "read:user_posts"
+    }
+  }
+}
