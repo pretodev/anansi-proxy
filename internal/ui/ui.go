@@ -11,13 +11,8 @@ import (
 	"github.com/pretodev/anansi-proxy/internal/state"
 )
 
-func Render(sm *state.StateManager, res []parser.Response) error {
-	if len(res) == 0 {
-		fmt.Println("No responses found to display.")
-		return nil
-	}
-
-	p := tea.NewProgram(initialModel(res, sm))
+func Render(sm *state.StateManager, endpoint *parser.EndpointSchema) error {
+	p := tea.NewProgram(initialModel(sm, endpoint))
 	if _, err := p.Run(); err != nil {
 		return err
 	}
@@ -30,7 +25,7 @@ var (
 )
 
 type model struct {
-	responses    []parser.Response
+	endpoint     *parser.EndpointSchema
 	cursor       int
 	keys         keyMap
 	stateManager *state.StateManager
@@ -42,9 +37,9 @@ type keyMap struct {
 	Quit key.Binding
 }
 
-func initialModel(res []parser.Response, sm *state.StateManager) model {
+func initialModel(sm *state.StateManager, endpoint *parser.EndpointSchema) model {
 	return model{
-		responses:    res,
+		endpoint:     endpoint,
 		cursor:       0,
 		stateManager: sm,
 		keys: keyMap{
@@ -72,7 +67,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.cursor--
 			}
 		case key.Matches(msg, m.keys.Down):
-			if m.cursor < len(m.responses)-1 {
+			if m.cursor < len(m.endpoint.Responses)-1 {
 				m.cursor++
 			}
 		}
@@ -88,7 +83,7 @@ func (m model) View() string {
 
 	b.WriteString("Select a response for the server:\n\n")
 
-	for i, res := range m.responses {
+	for i, res := range m.endpoint.Responses {
 		cursor := "  " // Not selected
 		line := fmt.Sprintf("[%d] %s", res.StatusCode, res.Title)
 

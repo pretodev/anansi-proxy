@@ -3,7 +3,6 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
 
@@ -12,51 +11,20 @@ import (
 )
 
 type Server struct {
-	state *state.StateManager
-	res   []parser.Response
+	state    *state.StateManager
+	endpoint parser.EndpointSchema
 }
 
-func New(sm *state.StateManager, res []parser.Response) *Server {
+func New(sm *state.StateManager, endpoint *parser.EndpointSchema) *Server {
 	return &Server{
-		state: sm,
-		res:   res,
+		state:    sm,
+		endpoint: *endpoint,
 	}
 }
 
 func (s *Server) handler(w http.ResponseWriter, r *http.Request) {
 	index := s.state.Index()
-
-	if index < 0 || index >= len(s.res) {
-		http.Error(w, "Internal server error: invalid response index", http.StatusInternalServerError)
-		return
-	}
-
-	currentResponse := s.res[index]
-
-	if currentResponse.Method != "" && currentResponse.Path != "" {
-		if strings.ToUpper(r.Method) != strings.ToUpper(currentResponse.Method) {
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-			return
-		}
-
-		if r.URL.Path != currentResponse.Path {
-			http.Error(w, "Not found", http.StatusNotFound)
-			return
-		}
-
-		if currentResponse.RequestSchema != "" && (r.Method == "POST" || r.Method == "PUT" || r.Method == "PATCH") {
-			body, err := io.ReadAll(r.Body)
-			if err != nil {
-				http.Error(w, "Failed to read request body", http.StatusBadRequest)
-				return
-			}
-
-			if !s.validateRequestBody(body, currentResponse.RequestSchema) {
-				http.Error(w, "Request body validation failed", http.StatusBadRequest)
-				return
-			}
-		}
-	}
+	currentResponse := s.endpoint.Responses[index]
 
 	if currentResponse.ContentType != "" {
 		w.Header().Set("Content-Type", currentResponse.ContentType)
@@ -71,13 +39,9 @@ func (s *Server) Serve(port int) error {
 		return fmt.Errorf("invalid port number %d: must be between 1 and 65535", port)
 	}
 
-	if len(s.res) == 0 {
-		return fmt.Errorf("no responses available to serve")
-	}
-
 	addr := fmt.Sprintf(":%d", port)
 
-	http.HandleFunc("/", s.handler)
+	http.HandleFunc(s.endpoint.Route, s.handler)
 
 	fmt.Printf("Starting server on port %d...\n", port)
 	if err := http.ListenAndServe(addr, nil); err != nil {
@@ -87,6 +51,7 @@ func (s *Server) Serve(port int) error {
 	return nil
 }
 
+// TODO: Implement full JSON schema validation
 func (s *Server) validateRequestBody(body []byte, schema string) bool {
 	if strings.Contains(schema, `"$schema"`) {
 		var jsonData interface{}

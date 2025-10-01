@@ -8,17 +8,26 @@ import (
 	"strings"
 )
 
-type Response struct {
-	Title         string
-	Body          string
-	ContentType   string
-	StatusCode    int
-	Method        string
-	Path          string
-	RequestSchema string
+const (
+	ContentTypeHeader  = "Content-Type"
+	DefaultContentType = "text/plain; charset=utf-8"
+)
+
+type EndpointSchema struct {
+	Route       string
+	ContentType string
+	Body        string
+	Responses   []Response
 }
 
-func Parse(filePath string) ([]Response, error) {
+type Response struct {
+	Title       string
+	Body        string
+	ContentType string
+	StatusCode  int
+}
+
+func Parse(filePath string) (*EndpointSchema, error) {
 	content, err := readFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file '%s': %w", filePath, err)
@@ -29,11 +38,11 @@ func Parse(filePath string) ([]Response, error) {
 	}
 
 	parts := strings.SplitN(content, "###", 2)
-	var method, path, requestSchema string
+	endpoint := EndpointSchema{}
 
 	if len(parts) > 1 {
 		requestSection := strings.TrimSpace(parts[0])
-		method, path, requestSchema = parseRequestSection(requestSection)
+		endpoint = parseEndpoint(requestSection)
 	}
 
 	responseContent := content
@@ -52,9 +61,6 @@ func Parse(filePath string) ([]Response, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse block: %w", err)
 		}
-		res.Method = method
-		res.Path = path
-		res.RequestSchema = requestSchema
 		responses = append(responses, res)
 	}
 
@@ -62,7 +68,9 @@ func Parse(filePath string) ([]Response, error) {
 		return nil, fmt.Errorf("no valid responses found in file '%s'", filePath)
 	}
 
-	return responses, nil
+	endpoint.Responses = responses
+
+	return &endpoint, nil
 }
 
 func parseBlock(block string) (Response, error) {
@@ -131,25 +139,37 @@ func parseHeader(res *Response, parts []string) error {
 	return nil
 }
 
-func parseRequestSection(requestSection string) (method, path, requestSchema string) {
+func parseEndpoint(requestSection string) EndpointSchema {
 	lines := strings.Split(requestSection, "\n")
 
-	if len(lines) > 0 {
-		firstLine := strings.TrimSpace(lines[0])
-		parts := strings.Fields(firstLine)
-		if len(parts) >= 2 {
-			method = parts[0]
-			path = parts[1]
-		}
+	schema := EndpointSchema{
+		Route:       "/",
+		ContentType: DefaultContentType,
 	}
+
+	if len(lines) == 0 {
+		return schema
+	}
+
+	schema.Route = strings.TrimSpace(lines[0])
 
 	var schemaLines []string
 	inSchema := false
+	var propertiesMap map[string]string
 
 	for i := 1; i < len(lines); i++ {
 		line := strings.TrimSpace(lines[i])
 
 		if strings.Contains(line, ":") && !inSchema {
+			parts := strings.SplitN(line, ":", 2)
+			if len(parts) == 2 {
+				key := strings.TrimSpace(parts[0])
+				value := strings.TrimSpace(parts[1])
+				if propertiesMap == nil {
+					propertiesMap = make(map[string]string)
+				}
+				propertiesMap[strings.ToLower(key)] = value
+			}
 			continue
 		}
 		if line == "" && !inSchema {
@@ -162,11 +182,15 @@ func parseRequestSection(requestSection string) (method, path, requestSchema str
 	}
 
 	if len(schemaLines) > 0 {
-		requestSchema = strings.Join(schemaLines, "\n")
-		requestSchema = strings.TrimSpace(requestSchema)
+		bodyContent := strings.Join(schemaLines, "\n")
+		schema.Body = strings.TrimSpace(bodyContent)
 	}
 
-	return method, path, requestSchema
+	if contentType, ok := propertiesMap[strings.ToLower(ContentTypeHeader)]; ok {
+		schema.ContentType = contentType
+	}
+
+	return schema
 }
 
 func readFile(filePath string) (string, error) {

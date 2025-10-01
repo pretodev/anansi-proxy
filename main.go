@@ -28,24 +28,19 @@ func main() {
 		flag.Usage()
 		os.Exit(1)
 	}
-	res, err := parser.Parse(resPath)
+	endpoint, err := parser.Parse(resPath)
 	if err != nil {
 		fmt.Printf("Error parsing file: %v\n", err)
 		os.Exit(1)
 	}
 
-	if len(res) == 0 {
-		fmt.Println("No responses found in the file.")
-		os.Exit(0)
-	}
-
-	sm := state.New()
+	sm := state.New(len(endpoint.Responses))
 
 	if !interactive {
 		sm.SetIndex(0)
 	}
 
-	httpSrv := server.New(sm, res)
+	httpSrv := server.New(sm, endpoint)
 	go func() {
 		if err := httpSrv.Serve(port); err != nil {
 			fmt.Printf("HTTP server error: %v\n", err)
@@ -54,12 +49,12 @@ func main() {
 	}()
 
 	if interactive {
-		if err := ui.Render(sm, res); err != nil {
+		if err := ui.Render(sm, endpoint); err != nil {
 			fmt.Printf("UI error: %v\n", err)
 			os.Exit(1)
 		}
 	} else {
-		fmt.Printf("Server running on port %d using response: [%d] %s\n", port, res[0].StatusCode, res[0].Title)
+		fmt.Printf("Server running on port %d using response: [%d] %s\n", port, endpoint.Responses[0].StatusCode, endpoint.Responses[0].Title)
 		select {}
 	}
 }
