@@ -1,15 +1,15 @@
-### Success: Request completed
+-- 201: Text Response
+
+Resource created
+
+-- 200: Json Response
+Content-Type: application/json
 
 {
   "message": "success"
 }
 
-### Success: Text message
-
-Success
-
-### Error: Not found resource
-Status-Code: 404
+-- 404: Error
 Content-Type: application/json
 
 {

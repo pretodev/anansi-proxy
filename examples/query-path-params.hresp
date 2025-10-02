@@ -1,7 +1,16 @@
-GET /api/v1/users/{userId}/posts?page=1&limit=10&sort=created_at&order=desc&status=published&category=tech
+GET /api
+    /v1
+    /users
+    /{userId}
+    /posts
+    ?page=1
+    &limit=10
+    &sort=created_at
+    &order=desc
+    &status=published
+    &category=tech
 
-### Success: Posts retrieved successfully
-Status-Code: 200
+-- 200: Posts retrieved successfully
 Content-Type: application/json
 
 {
@@ -53,8 +62,7 @@ Content-Type: application/json
   }
 }
 
-### Error: User not found
-Status-Code: 404
+-- 404: User not found
 Content-Type: application/json
 
 {
@@ -68,8 +76,7 @@ Content-Type: application/json
   }
 }
 
-### Error: Invalid query parameters
-Status-Code: 400
+-- 400: Invalid query parameters
 Content-Type: application/json
 
 {
@@ -98,8 +105,7 @@ Content-Type: application/json
   }
 }
 
-### Error: Unauthorized access
-Status-Code: 403
+-- 403: Unauthorized access
 Content-Type: application/json
 
 {

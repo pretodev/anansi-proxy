@@ -1,8 +1,6 @@
 POST /config
-Content-Type: text/yaml
-
+Accept: text/yaml
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Server Configuration",
   "type": "object",
   "properties": {
@@ -34,7 +32,7 @@ Content-Type: text/yaml
   "required": ["server", "database"]
 }
 
-### Success: Actual YAML data
+-- 200: Actual YAML data
 Content-Type: text/yaml
 
 server: 

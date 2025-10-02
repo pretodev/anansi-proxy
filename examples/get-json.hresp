@@ -1,7 +1,6 @@
 GET /cars
 
-### Success: List all cars
-Status-Code: 201
+-- 200: List all cars
 Content-Type: application/json
 
 [

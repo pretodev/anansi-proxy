@@ -1,8 +1,6 @@
 PATCH /user/image
-Content-Type: multipart/form-data; boundary=PieBoundary123456789012345678901234567
-
+Accept: multipart/form-data
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "User Image Upload",
   "type": "object",
   "properties": {
@@ -29,8 +27,7 @@ Content-Type: multipart/form-data; boundary=PieBoundary1234567890123456789012345
   "required": ["image"]
 }
 
-### Success: Image updated
-Status-Code: 200
+-- 200: Image updated
 Content-Type: application/json
 
 {
@@ -39,16 +36,14 @@ Content-Type: application/json
   "updated_at": "2024-01-15T10:30:00Z"
 }
 
-### Error: File too large
-Status-Code: 413
+-- 403: File too large
 Content-Type: application/json
 
 {
   "message": "Image file size exceeds maximum limit of 5MB"
 }
 
-### Error: Invalid file type
-Status-Code: 415
+-- 415: Invalid file type
 Content-Type: application/json
 
 {

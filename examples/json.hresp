@@ -1,8 +1,7 @@
 POST /user
-
+Accept: application/json 
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Novo usuário",
+  "title": "New User",
   "type": "object",
   "properties": {
     "name": {
@@ -18,8 +17,7 @@ POST /user
   ]
 }
 
-### Success: User created
-Status-Code: 201
+-- 201: User created
 Content-Type: application/json
 
 {
@@ -27,8 +25,7 @@ Content-Type: application/json
   "age": 34
 }
 
-### Error: User conflict
-Status-Code: 409
+-- 409: User conflict
 Content-Type: application/json
 
 {

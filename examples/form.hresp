@@ -1,8 +1,6 @@
 PUT /user
-Content-Type: application/x-www-form-urlencoded
-
+Accept: application/x-www-form-urlencoded
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "User Registration Form",
   "type": "object",
   "properties": {
@@ -36,8 +34,7 @@ Content-Type: application/x-www-form-urlencoded
   "required": ["name", "email", "password", "terms_accepted"]
 }
 
-### Success: User created
-Status-Code: 201
+-- 201: User created
 Content-Type: application/json
 
 {
@@ -47,8 +44,7 @@ Content-Type: application/json
   "created_at": "2024-01-15T10:30:00Z"
 }
 
-### Error: Validation failed
-Status-Code: 422
+-- 422: Validation failed
 Content-Type: application/json
 
 {
