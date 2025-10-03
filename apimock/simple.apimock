@@ -3,14 +3,14 @@
 Resource created
 
 -- 200: Json Response
-Content-Type: application/json
+ContentType: application/json
 
 {
   "message": "success"
 }
 
 -- 404: Error
-Content-Type: application/json
+ContentType: application/json
 
 {
   "message": "Resource not found"

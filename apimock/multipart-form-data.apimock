@@ -28,7 +28,7 @@ Accept: multipart/form-data
 }
 
 -- 200: Image updated
-Content-Type: application/json
+ContentType: application/json
 
 {
   "message": "User image updated successfully",
@@ -37,14 +37,14 @@ Content-Type: application/json
 }
 
 -- 403: File too large
-Content-Type: application/json
+ContentType: application/json
 
 {
   "message": "Image file size exceeds maximum limit of 5MB"
 }
 
 -- 415: Invalid file type
-Content-Type: application/json
+ContentType: application/json
 
 {
   "message": "Unsupported media type. Only JPEG, PNG, GIF, and WebP are allowed"

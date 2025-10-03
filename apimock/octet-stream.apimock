@@ -10,7 +10,7 @@ Accept: application/octet-stream
 }
 
 -- 200: Image updated
-Content-Type: application/json
+ContentType: application/json
 
 {
   "message": "User image updated successfully",
@@ -20,14 +20,14 @@ Content-Type: application/json
 }
 
 -- 400: Invalid binary data
-Content-Type: application/json
+ContentType: application/json
 
 {
   "message": "Invalid binary image data"
 }
 
 -- 413: File too large
-Content-Type: application/json
+ContentType: application/json
 
 {
   "message": "Image file size exceeds maximum limit of 10MB"

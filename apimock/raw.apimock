@@ -1,5 +1,5 @@
 POST /text
-Content-Type: text/plain; charset=utf-8
+ContentType: text/plain; charset=utf-8
 {
   "title": "Plain Text Content",
   "type": "string",
@@ -8,15 +8,13 @@ Content-Type: text/plain; charset=utf-8
   "maxLength": 10000
 }
 
-### Success: Text processed
-Status-Code: 200
-Content-Type: text/plain; charset=utf-8
+-- 200: Text processed
+ContentType: text/plain; charset=utf-8
 
 Text successfully processed
 
-### Error: Invalid content
-Status-Code: 400
-Content-Type: application/json
+-- 400: Invalid content
+ContentType: application/json
 
 {
   "message": "Invalid text content provided"

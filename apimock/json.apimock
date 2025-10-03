@@ -18,7 +18,7 @@ Accept: application/json
 }
 
 -- 201: User created
-Content-Type: application/json
+ContentType: application/json
 
 {
   "name": "Luiz",
@@ -26,7 +26,7 @@ Content-Type: application/json
 }
 
 -- 409: User conflict
-Content-Type: application/json
+ContentType: application/json
 
 {
   "message": "User existes",

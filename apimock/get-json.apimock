@@ -1,7 +1,7 @@
 GET /cars
 
 -- 200: List all cars
-Content-Type: application/json
+ContentType: application/json
 
 [
   {

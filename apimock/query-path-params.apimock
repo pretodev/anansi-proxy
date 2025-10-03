@@ -11,7 +11,7 @@ GET /api
     &category=tech
 
 -- 200: Posts retrieved successfully
-Content-Type: application/json
+ContentType: application/json
 
 {
   "data": [
@@ -63,7 +63,7 @@ Content-Type: application/json
 }
 
 -- 404: User not found
-Content-Type: application/json
+ContentType: application/json
 
 {
   "error": {
@@ -77,7 +77,7 @@ Content-Type: application/json
 }
 
 -- 400: Invalid query parameters
-Content-Type: application/json
+ContentType: application/json
 
 {
   "error": {
@@ -106,7 +106,7 @@ Content-Type: application/json
 }
 
 -- 403: Unauthorized access
-Content-Type: application/json
+ContentType: application/json
 
 {
   "error": {

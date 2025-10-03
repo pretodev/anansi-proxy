@@ -25,7 +25,7 @@ Accept: application/xml
 </xs:schema>
 
 -- 201: User created
-Content-Type: application/xml
+ContentType: application/xml
 
 <?xml version="1.0" encoding="UTF-8"?>
 <user xmlns="http://example.com/user">

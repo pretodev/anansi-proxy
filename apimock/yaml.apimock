@@ -33,7 +33,7 @@ Accept: text/yaml
 }
 
 -- 200: Actual YAML data
-Content-Type: text/yaml
+ContentType: text/yaml
 
 server: 
   host: "localhost"
