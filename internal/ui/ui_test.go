@@ -12,9 +12,9 @@ import (
 
 func createTestEndpoint() *endpoint.EndpointSchema {
 	return &endpoint.EndpointSchema{
-		Route:       "/api/test",
-		ContentType: "application/json",
-		Body:        "{}",
+		Route:  "/api/test",
+		Accept: "application/json",
+		Body:   "{}",
 		Responses: []endpoint.Response{
 			{
 				Title:       "Success",
@@ -284,10 +284,10 @@ func TestModel_View_SelectedItem(t *testing.T) {
 func TestModel_View_EmptyResponses(t *testing.T) {
 	sm := state.New(0)
 	ep := &endpoint.EndpointSchema{
-		Route:       "/api/test",
-		ContentType: "application/json",
-		Body:        "{}",
-		Responses:   []endpoint.Response{},
+		Route:     "/api/test",
+		Accept:    "application/json",
+		Body:      "{}",
+		Responses: []endpoint.Response{},
 	}
 	m := initialModel(sm, ep)
 
@@ -305,9 +305,9 @@ func TestModel_View_EmptyResponses(t *testing.T) {
 func TestModel_View_SingleResponse(t *testing.T) {
 	sm := state.New(1)
 	ep := &endpoint.EndpointSchema{
-		Route:       "/api/test",
-		ContentType: "application/json",
-		Body:        "{}",
+		Route:  "/api/test",
+		Accept: "application/json",
+		Body:   "{}",
 		Responses: []endpoint.Response{
 			{
 				Title:       "Only Response",

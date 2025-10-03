@@ -6,10 +6,10 @@ const (
 )
 
 type EndpointSchema struct {
-	Route       string
-	ContentType string
-	Body        string
-	Responses   []Response
+	Route     string
+	Accept    string
+	Body      string
+	Responses []Response
 }
 
 type Response struct {

@@ -12,9 +12,9 @@ import (
 
 func createTestEndpoint() *endpoint.EndpointSchema {
 	return &endpoint.EndpointSchema{
-		Route:       "/api/test",
-		ContentType: "application/json",
-		Body:        "{}",
+		Route:  "/api/test",
+		Accept: "application/json",
+		Body:   "{}",
 		Responses: []endpoint.Response{
 			{
 				Title:       "Success",
@@ -142,9 +142,9 @@ func TestServer_Handler_ThirdResponse(t *testing.T) {
 func TestServer_Handler_EmptyContentType(t *testing.T) {
 	sm := state.New(1)
 	ep := &endpoint.EndpointSchema{
-		Route:       "/api/test",
-		ContentType: "",
-		Body:        "plain text",
+		Route:  "/api/test",
+		Accept: "",
+		Body:   "plain text",
 		Responses: []endpoint.Response{
 			{
 				Title:       "Plain Text",
@@ -177,9 +177,9 @@ func TestServer_Handler_EmptyContentType(t *testing.T) {
 func TestServer_Handler_WithCustomContentType(t *testing.T) {
 	sm := state.New(1)
 	ep := &endpoint.EndpointSchema{
-		Route:       "/api/xml",
-		ContentType: "application/xml",
-		Body:        "<root/>",
+		Route:  "/api/xml",
+		Accept: "application/xml",
+		Body:   "<root/>",
 		Responses: []endpoint.Response{
 			{
 				Title:       "XML Response",
@@ -441,9 +441,9 @@ func TestServer_ValidateRequestBody_NoSchema(t *testing.T) {
 func TestServer_Handler_MultipleRequests(t *testing.T) {
 	sm := state.New(2)
 	ep := &endpoint.EndpointSchema{
-		Route:       "/api/toggle",
-		ContentType: "application/json",
-		Body:        "{}",
+		Route:  "/api/toggle",
+		Accept: "application/json",
+		Body:   "{}",
 		Responses: []endpoint.Response{
 			{
 				Title:       "Response A",

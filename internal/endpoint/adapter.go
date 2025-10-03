@@ -15,9 +15,9 @@ func FromAPIMockFile(ast *apimock.APIMockFile) (*EndpointSchema, error) {
 	}
 
 	endpoint := &EndpointSchema{
-		Route:       "/",
-		ContentType: DefaultContentType,
-		Responses:   make([]Response, 0, len(ast.Responses)),
+		Route:     "/",
+		Accept:    DefaultContentType,
+		Responses: make([]Response, 0, len(ast.Responses)),
 	}
 
 	// Extract route from request section if available
@@ -26,7 +26,7 @@ func FromAPIMockFile(ast *apimock.APIMockFile) (*EndpointSchema, error) {
 
 		// Get Content-Type from request headers if available
 		if contentType, ok := ast.Request.Headers["Content-Type"]; ok {
-			endpoint.ContentType = contentType
+			endpoint.Accept = contentType
 		}
 
 		// Set body from request body schema if available
