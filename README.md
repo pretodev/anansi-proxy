@@ -66,23 +66,32 @@ anansi-proxy -f examples/simple.hresp -it
 
 Create a `.hresp` file with the following format:
 
-```
-### Success: Request completed
-
-{
-  "message": "success"
-}
-
-### Success: Text message
-
-Success
-
-### Error: Not found resource
-Status-Code: 404
+```apimock
+POST /api/users
 Content-Type: application/json
 
 {
-  "message": "Resource not found"
+  "type": "object",
+  "properties": {
+    "name": {"type": "string"},
+    "email": {"type": "string"}
+  }
+}
+
+-- 201: User created
+Content-Type: application/json
+
+{
+  "id": 123,
+  "name": "John Doe",
+  "email": "john@example.com"
+}
+
+-- 400: Validation error
+Content-Type: application/json
+
+{
+  "error": "Invalid email format"
 }
 ```
 
