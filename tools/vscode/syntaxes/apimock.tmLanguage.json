@@ -1,0 +1,164 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "ApiMock",
+  "scopeName": "source.apimock",
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#response-line"
+    },
+    {
+      "include": "#method-line"
+    },
+    {
+      "include": "#property"
+    },
+    {
+      "include": "#json-body"
+    },
+    {
+      "include": "#xml-body"
+    },
+    {
+      "include": "#yaml-body"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.number-sign.apimock",
+          "match": "#.*$"
+        }
+      ]
+    },
+    "response-line": {
+      "patterns": [
+        {
+          "name": "meta.response.apimock",
+          "match": "^\\s*(--)\\s*(\\d{3})\\s*(:)\\s*(.*)$",
+          "captures": {
+            "1": {
+              "name": "keyword.operator.response.apimock"
+            },
+            "2": {
+              "name": "constant.numeric.status-code.apimock"
+            },
+            "3": {
+              "name": "punctuation.separator.apimock"
+            },
+            "4": {
+              "name": "string.unquoted.description.apimock"
+            }
+          }
+        }
+      ]
+    },
+    "method-line": {
+      "patterns": [
+        {
+          "name": "meta.method.apimock",
+          "match": "^\\s*(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS|TRACE|CONNECT)\\s+(/[^\\s]*)\\s*$",
+          "captures": {
+            "1": {
+              "name": "keyword.control.method.apimock"
+            },
+            "2": {
+              "name": "string.unquoted.path.apimock",
+              "patterns": [
+                {
+                  "include": "#path-placeholder"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "meta.path-only.apimock",
+          "match": "^\\s*(/[^\\s]*)\\s*$",
+          "captures": {
+            "1": {
+              "name": "string.unquoted.path.apimock",
+              "patterns": [
+                {
+                  "include": "#path-placeholder"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "path-placeholder": {
+      "patterns": [
+        {
+          "name": "variable.parameter.path.apimock",
+          "match": "\\{[^}]+\\}"
+        }
+      ]
+    },
+    "property": {
+      "patterns": [
+        {
+          "name": "meta.property.apimock",
+          "match": "^\\s*([A-Za-z][A-Za-z0-9_\\-.]*)\\s*(:)\\s*(.*)$",
+          "captures": {
+            "1": {
+              "name": "entity.name.tag.property.apimock"
+            },
+            "2": {
+              "name": "punctuation.separator.key-value.apimock"
+            },
+            "3": {
+              "name": "string.unquoted.property-value.apimock"
+            }
+          }
+        }
+      ]
+    },
+    "json-body": {
+      "patterns": [
+        {
+          "name": "meta.embedded.block.json",
+          "begin": "^\\s*\\{",
+          "end": "^\\s*\\}",
+          "patterns": [
+            {
+              "include": "source.json"
+            }
+          ]
+        }
+      ]
+    },
+    "xml-body": {
+      "patterns": [
+        {
+          "name": "meta.embedded.block.xml",
+          "begin": "^\\s*<\\?xml",
+          "end": "^\\s*</[^>]+>\\s*$",
+          "patterns": [
+            {
+              "include": "text.xml"
+            }
+          ]
+        }
+      ]
+    },
+    "yaml-body": {
+      "patterns": [
+        {
+          "name": "meta.embedded.block.yaml",
+          "begin": "^\\s*[a-zA-Z_][a-zA-Z0-9_]*:\\s*$",
+          "end": "^(?!\\s)",
+          "patterns": [
+            {
+              "include": "source.yaml"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

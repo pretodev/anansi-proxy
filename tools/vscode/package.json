@@ -1,0 +1,44 @@
+{
+  "name": "apimock-syntax",
+  "displayName": "ApiMock Syntax Highlighting",
+  "description": "Syntax highlighting for .apimock files",
+  "version": "0.1.0",
+  "publisher": "anansi-proxy",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "apimock",
+        "aliases": [
+          "ApiMock",
+          "apimock"
+        ],
+        "extensions": [
+          ".apimock"
+        ],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icon.png",
+          "dark": "./icon.png"
+        }
+      }
+    ],
+    "grammars": [
+      {
+        "language": "apimock",
+        "scopeName": "source.apimock",
+        "path": "./syntaxes/apimock.tmLanguage.json"
+      }
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pretodev/anansi-proxy"
+  },
+  "license": "MIT"
+}
