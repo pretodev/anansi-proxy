@@ -40,6 +40,8 @@ func main() {
 		sm.SetIndex(0)
 	}
 
+	fmt.Printf("Loaded endpoint: %s\n", endpoint)
+
 	httpSrv := server.New(sm, endpoint)
 	go func() {
 		if err := httpSrv.Serve(port); err != nil {

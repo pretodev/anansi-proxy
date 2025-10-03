@@ -138,7 +138,7 @@ func (p *Parser) parseRequestSection(tokens []Token, i *int) (*RequestSection, e
 				*i++
 				continue
 			}
-			req.Headers[tok.Key] = tok.Value
+			req.Properties[tok.Key] = tok.Value
 			*i++
 		case TokenBlankLine:
 			// Blank line indicates start of body (if any)
@@ -187,7 +187,7 @@ func (p *Parser) parseResponseSection(tokens []Token, i *int) (ResponseSection, 
 	for *i < len(tokens) {
 		tok := tokens[*i]
 		if tok.Type == TokenHeader {
-			resp.Headers[tok.Key] = tok.Value
+			resp.Properties[tok.Key] = tok.Value
 			*i++
 			continue
 		}

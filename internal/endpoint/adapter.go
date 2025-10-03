@@ -20,12 +20,16 @@ func FromAPIMockFile(ast *apimock.APIMockFile) (*EndpointSchema, error) {
 		Responses: make([]Response, 0, len(ast.Responses)),
 	}
 
-	// Extract route from request section if available
-	if ast.Request != nil {
-		endpoint.Route = ast.Request.Path
+	method := ""
+	if ast.Request.Method != "" {
+		method = strings.ToUpper(ast.Request.Method) + " "
+	}
 
-		// Get Content-Type from request headers if available
-		if contentType, ok := ast.Request.Headers["Content-Type"]; ok {
+	if ast.Request != nil {
+		endpoint.Route = method + ast.Request.Path
+
+		// Get Content-Type from request properties if available
+		if contentType, ok := ast.Request.Properties[RequestAcceptPropertyName]; ok {
 			endpoint.Accept = contentType
 		}
 
@@ -49,8 +53,7 @@ func FromAPIMockFile(ast *apimock.APIMockFile) (*EndpointSchema, error) {
 			response.Title = fmt.Sprintf("Response %d", resp.StatusCode)
 		}
 
-		// Get Content-Type from response headers if available
-		if contentType, ok := resp.Headers["Content-Type"]; ok {
+		if contentType, ok := resp.Properties[ResponseContentTypePropertyName]; ok {
 			response.ContentType = contentType
 		}
 
@@ -84,11 +87,6 @@ func ParseAPIMock(filePath string) (*EndpointSchema, error) {
 	endpoint, err := FromAPIMockFile(ast)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert APIMock file '%s': %w", filePath, err)
-	}
-
-	// Ensure route starts with /
-	if !strings.HasPrefix(endpoint.Route, "/") {
-		endpoint.Route = "/" + endpoint.Route
 	}
 
 	return endpoint, nil

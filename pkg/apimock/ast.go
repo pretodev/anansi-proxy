@@ -51,7 +51,7 @@ type RequestSection struct {
 	Path         string            // Base path (e.g., "/api/users")
 	PathSegments []PathSegment     // Parsed path segments with placeholders
 	QueryParams  map[string]string // Query parameters
-	Headers      map[string]string // HTTP headers
+	Properties   map[string]string // Request Properties
 	BodySchema   string            // Request body schema (JSON, XML, etc.)
 }
 
@@ -71,11 +71,11 @@ func (ps PathSegment) String() string {
 
 // ResponseSection represents one HTTP response definition.
 // Each response includes a status code, optional description,
-// headers, and response body content.
+// properties, and response body content.
 type ResponseSection struct {
 	StatusCode  int               // HTTP status code (200, 404, etc.)
 	Description string            // Optional description
-	Headers     map[string]string // Response headers
+	Properties  map[string]string // Response Properties
 	Body        string            // Response body content
 }
 
@@ -93,7 +93,7 @@ func NewRequestSection() *RequestSection {
 	return &RequestSection{
 		PathSegments: make([]PathSegment, 0),
 		QueryParams:  make(map[string]string),
-		Headers:      make(map[string]string),
+		Properties:   make(map[string]string),
 	}
 }
 
@@ -123,7 +123,7 @@ func (r *RequestSection) HasPathParameters() bool {
 // The Headers map is initialized to an empty map.
 func NewResponseSection() ResponseSection {
 	return ResponseSection{
-		Headers: make(map[string]string),
+		Properties: make(map[string]string),
 	}
 }
 
