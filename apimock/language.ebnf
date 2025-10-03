@@ -1,4 +1,3 @@
-
 (* ============================================ property_key = identifier ;
 property_value = any_char_except_EOL , { any_char_except_EOL } ;
 property = property_key , ":" , [ SP ] , property_value , EOL ;(* Basic Tokens - Characresponse_line = "--" , [ SP ] , staresponse_line = "--" , [ SP ] , status_code , ":" , [ SP ] , [ description ] , EOL ;
@@ -11,7 +10,6 @@ letter = "A".."Z" | "a".."z" ;
 digit = "0".."9" ;
 SP = " " | "\t" ;
 EOL = "\n" | "\r\n" ;
-indent = SP+ ;
 
 (* Special character classes *)
 any_char_except_EOL = ? any character except end of line ? ;
@@ -25,7 +23,8 @@ any_char_except_EOL_or_space = ? any character except end of line or space ? ;
 identifier = letter , { letter | digit | "_" | "-" | "." } ;
 status_code = digit , digit , digit ;
 description = any_char_except_EOL , { any_char_except_EOL } ;
-blank_lines = ( SP* , EOL ) , { SP* , EOL } ;
+blank_line = SP* , EOL ;
+blank_lines = blank_line , { blank_line } ;
 
 
 (* ============================================ *)
@@ -37,23 +36,28 @@ http_method = "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "HEAD" | "OPTIONS" |
 (* Path segment: can be a literal identifier or a placeholder
    Examples: "users" or "{userId}"
 *)
-path_segment = identifier | "{" , identifier , "}" ;
+path_segment = identifier | ( "{" , identifier , "}" ) ;
 
 path_start = "/" , path_segment , { "/" , path_segment } ;
 
-path_continuation = indent ,  ( "/", path_segment | "?" , query_parameters | "&" , query_parameters ), EOL ;
+(* Indented continuation of path, query params, or additional query params *)
+indent = SP , { SP } ;
 
-query_parameters = identifier , "=" , query_parameters_value ;
-query_parameters_value = any_char_except_EOL_or_space , { any_char_except_EOL_or_space } ;
+path_continuation = indent , ( ( "/" , path_segment ) 
+                             | ( "?" , query_parameter ) 
+                             | ( "&" , query_parameter ) ) , EOL ;
+
+query_parameter = identifier , "=" , query_parameter_value ;
+query_parameter_value = any_char_except_EOL_or_space , { any_char_except_EOL_or_space } ;
 
 
 (* ============================================ *)
-(* Properties - Key-Value Pairs                *)
+(* Properties - Key-Value Pairs (HTTP Headers) *)
 (* ============================================ *)
 
 property_key = identifier ;
-property_value = 1*<any_char_except_EOL> ;
-property = property_key , ":", SP? , property_value , EOL ;
+property_value = any_char_except_EOL , { any_char_except_EOL } ;
+property = property_key , ":" , [ SP ] , property_value , EOL ;
 
 
 (* ============================================ *)
@@ -63,35 +67,37 @@ property = property_key , ":", SP? , property_value , EOL ;
 (* Method line: defines HTTP method and path
    Example: POST /api/users
 *)
-method_line = [ http_method , SP ] , path_start , EOL , { path_continuation };
+method_line = [ http_method , SP ] , path_start , EOL , { path_continuation } ;
 
-body_schema_line = any_char_except_EOL , { any_char_except_EOL } , EOL ;
-body_schema = body_schema_line , { body_schema_line } ;
+(* Body can be JSON schema, XML schema, plain text, etc. *)
+body_line = any_char_except_EOL , { any_char_except_EOL } , EOL ;
+body = body_line , { body_line } ;
 
 (* Request section: complete HTTP request structure *)
 request_section = method_line ,
                   { property } ,
-                  [ body_schema ] ;
+                  [ blank_line , body ] ;
 
 
 (* ============================================ *)
 (* Response Components                         *)
 (* ============================================ *)
 
-response_line = "--", SP? , status_code , ":", SP?, [ description ] , EOL ;
+response_line = "--" , [ SP ] , status_code , ":" , [ SP ] , [ description ] , EOL ;
 
-response_body_line = 1*<any_char_except_EOL> , EOL ;
+response_body_line = any_char_except_EOL , { any_char_except_EOL } , EOL ;
 response_body = response_body_line , { response_body_line } ;
 
 (* Response section: complete HTTP response structure *)
 response_section = response_line ,
                    { property } ,
-                   EOL ,
-                   [ response_body ] ;
+                   [ blank_line , response_body ] ;
 
 
 (* ============================================ *)
 (* Root Rule - Complete APIMock File           *)
 (* ============================================ *)
 
-apimock = [ request_section , blank_lines ] , response_section , { blank_lines , response_section } ;
+apimock = [ request_section , blank_lines ] , 
+          response_section , 
+          { blank_lines , response_section } ;
