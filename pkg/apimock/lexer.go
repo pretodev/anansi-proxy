@@ -6,63 +6,84 @@ import (
 	"strings"
 )
 
-// TokenType represents the type of a lexical token in an .apimock file
+// TokenType represents the type of a lexical token in an .apimock file.
+// Each token type corresponds to a different syntactic element in the file format.
 type TokenType int
 
 const (
+	// TokenBlankLine represents an empty or whitespace-only line
 	TokenBlankLine TokenType = iota
+	// TokenRequestLine represents the initial request line (method and/or path)
 	TokenRequestLine
+	// TokenPathContinuation represents a continuation of the path on a new line
 	TokenPathContinuation
+	// TokenQueryParam represents a query parameter (key=value)
 	TokenQueryParam
+	// TokenHeader represents an HTTP header (key: value)
 	TokenHeader
+	// TokenResponseStart represents the start of a response section (-- code: description)
 	TokenResponseStart
+	// TokenBodyLine represents a line of body content (request or response)
 	TokenBodyLine
 )
 
-// Token produced by the Lexer
+// Token represents a lexical token produced by the Lexer.
+// Different fields are populated based on the TokenType.
 type Token struct {
-	Type          TokenType
-	Line          int
-	Raw           string
+	Type TokenType
+	Line int
+	Raw  string
 
 	// Request line
-	Method        string
-	Path          string
-	PathSegments  []PathSegment
+	Method       string
+	Path         string
+	PathSegments []PathSegment
 
 	// Path continuation
 	PathContinuation string
 
 	// Query param
-	Key           string
-	Value         string
+	Key   string
+	Value string
 
 	// Response start
-	StatusCode    int
-	Description   string
+	StatusCode  int
+	Description string
 }
 
-// Regular expressions used by the lexer (extracted from parser)
+// Regular expressions used by the lexer for pattern matching
 var (
-	httpMethodRegex          = regexp.MustCompile(`^(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS|TRACE|CONNECT)\s`)
-	pathStartRegex           = regexp.MustCompile(`^(/[a-zA-Z0-9_.\-{}]+)+`)
-	pathSegmentRegex         = regexp.MustCompile(`/([a-zA-Z0-9_.\-]+|\{[a-zA-Z0-9_.\-]+\})`)
-	pathContRegex            = regexp.MustCompile(`^\s+(/[a-zA-Z0-9_.\-{}]+|\?[a-zA-Z0-9_.\-]+=\S+|&[a-zA-Z0-9_.\-]+=\S+)`)
-	queryParamRegex          = regexp.MustCompile(`([a-zA-Z0-9_.\-]+)=(\S+)`)
+	// httpMethodRegex matches HTTP method verbs at the start of a line
+	httpMethodRegex = regexp.MustCompile(`^(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS|TRACE|CONNECT)\s`)
+	// pathStartRegex matches URL paths starting with /
+	pathStartRegex = regexp.MustCompile(`^(/[a-zA-Z0-9_.\-{}]+)+`)
+	// pathSegmentRegex matches individual path segments including parameters
+	pathSegmentRegex = regexp.MustCompile(`/([a-zA-Z0-9_.\-]+|\{[a-zA-Z0-9_.\-]+\})`)
+	// pathContRegex matches path continuations on indented lines
+	pathContRegex = regexp.MustCompile(`^\s+(/[a-zA-Z0-9_.\-{}]+|\?[a-zA-Z0-9_.\-]+=\S+|&[a-zA-Z0-9_.\-]+=\S+)`)
+	// queryParamRegex extracts key-value pairs from query parameters
+	queryParamRegex = regexp.MustCompile(`([a-zA-Z0-9_.\-]+)=(\S+)`)
+	// responseLineCaptureRegex matches response start lines (-- 200: Description)
 	responseLineCaptureRegex = regexp.MustCompile(`^--\s*(\d{3}):\s*(.*)`)
-	propertyCaptureRegex     = regexp.MustCompile(`^([a-zA-Z][a-zA-Z0-9_.\-]*):\s*(.+)`)
+	// propertyCaptureRegex matches header-like properties (Key: Value)
+	propertyCaptureRegex = regexp.MustCompile(`^([a-zA-Z][a-zA-Z0-9_.\-]*):\s*(.+)`)
 )
 
-// Lexer reads .apimock lines and produces tokens
+// Lexer reads .apimock file lines and produces a stream of tokens.
+// It performs lexical analysis to identify syntactic elements.
 type Lexer struct {
 	lines []string
 }
 
+// NewLexer creates a new Lexer for the given lines.
+// The lines parameter should contain the complete file content split by newlines.
 func NewLexer(lines []string) *Lexer {
 	return &Lexer{lines: lines}
 }
 
-// Lex converts the file contents to a list of tokens
+// Lex converts the file contents to a list of tokens.
+// It analyzes each line and produces appropriate tokens based on the content.
+// Returns an error if the lexical analysis fails.
 func (l *Lexer) Lex() ([]Token, error) {
 	tokens := make([]Token, 0)
 
@@ -141,7 +162,8 @@ func (l *Lexer) Lex() ([]Token, error) {
 	return tokens, nil
 }
 
-// parsePathSegments parses a path into PathSegment tokens
+// parsePathSegments parses a path string into PathSegment tokens.
+// It identifies both static segments and parameter placeholders (e.g., {id}).
 func parsePathSegments(path string) []PathSegment {
 	segments := make([]PathSegment, 0)
 	matches := pathSegmentRegex.FindAllStringSubmatch(path, -1)

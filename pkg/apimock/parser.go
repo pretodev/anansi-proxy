@@ -6,7 +6,8 @@ import (
 	"strings"
 )
 
-// Parser parses .apimock files and builds an AST
+// Parser parses .apimock files and builds an Abstract Syntax Tree (AST).
+// It uses a Lexer to tokenize the input and then constructs the APIMockFile structure.
 type Parser struct {
 	filename string
 	lines    []string
@@ -14,7 +15,9 @@ type Parser struct {
 	errors   []string
 }
 
-// NewParser creates a new parser for a .apimock file
+// NewParser creates a new parser for a .apimock file.
+// It reads the file content and prepares it for parsing.
+// Returns an error if the file cannot be read.
 func NewParser(filename string) (*Parser, error) {
 	content, err := os.ReadFile(filename)
 	if err != nil {
@@ -30,7 +33,10 @@ func NewParser(filename string) (*Parser, error) {
 	}, nil
 }
 
-// Parse parses the file and returns the AST using a tokenized input
+// Parse parses the file and returns the AST.
+// It first tokenizes the input using a Lexer, then constructs the APIMockFile structure.
+// The file must contain at least one response section.
+// Returns an error if the file format is invalid or cannot be parsed.
 func (p *Parser) Parse() (*APIMockFile, error) {
 	ast := NewAPIMockFile()
 
@@ -61,7 +67,7 @@ func (p *Parser) Parse() (*APIMockFile, error) {
 
 	// At least one response section required
 	if i >= len(tokens) || tokens[i].Type != TokenResponseStart {
-		return nil, fmt.Errorf("expected at least one response section")
+		return nil, NewParseError(p.filename, 0, "expected at least one response section (format: -- CODE: Description)")
 	}
 
 	// Parse all response sections
@@ -84,18 +90,20 @@ func (p *Parser) Parse() (*APIMockFile, error) {
 	}
 
 	if len(ast.Responses) == 0 {
-		return nil, fmt.Errorf("expected at least one response section")
+		return nil, NewParseError(p.filename, 0, "expected at least one response section")
 	}
 
 	return ast, nil
 }
 
-// parseRequestSection parses the request section using tokens
+// parseRequestSection parses the request section using tokens.
+// It extracts the HTTP method, path, query parameters, headers, and optional body schema.
+// The method continues parsing until it encounters a response section or reaches the end of tokens.
 func (p *Parser) parseRequestSection(tokens []Token, i *int) (*RequestSection, error) {
 	req := NewRequestSection()
 
 	if *i >= len(tokens) || tokens[*i].Type != TokenRequestLine {
-		return nil, fmt.Errorf("line %d: expected method/path line", tokens[*i].Line)
+		return nil, NewParseError(p.filename, tokens[*i].Line, "expected HTTP method and/or path (e.g., 'GET /api/users')")
 	}
 
 	// Request line
@@ -156,15 +164,23 @@ DONE:
 	return req, nil
 }
 
-// parseResponseSection parses a response section using tokens
+// parseResponseSection parses a response section using tokens.
+// It extracts the status code, description, headers, and body content.
+// Trailing blank lines are removed from the response body.
 func (p *Parser) parseResponseSection(tokens []Token, i *int) (ResponseSection, error) {
 	resp := NewResponseSection()
 
 	if *i >= len(tokens) || tokens[*i].Type != TokenResponseStart {
-		return resp, fmt.Errorf("line %d: invalid response line", tokens[*i].Line)
+		return resp, NewParseError(p.filename, tokens[*i].Line, "invalid response line format (expected: -- CODE: Description)")
 	}
 	resp.StatusCode = tokens[*i].StatusCode
 	resp.Description = tokens[*i].Description
+
+	// Validate status code
+	if !IsValidHTTPStatusCode(resp.StatusCode) {
+		return resp, NewParseError(p.filename, tokens[*i].Line, fmt.Sprintf("invalid HTTP status code: %d (must be between %d-%d)", resp.StatusCode, MinHTTPStatusCode, MaxHTTPStatusCode))
+	}
+
 	*i++
 
 	// Parse headers
