@@ -3,8 +3,6 @@ package apimock
 import (
 	"fmt"
 	"os"
-	"regexp"
-	"strconv"
 	"strings"
 )
 
@@ -15,17 +13,6 @@ type Parser struct {
 	lineNum  int
 	errors   []string
 }
-
-// Regular expressions for parsing
-var (
-	httpMethodRegex          = regexp.MustCompile(`^(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS|TRACE|CONNECT)\s`)
-	pathStartRegex           = regexp.MustCompile(`^(/[a-zA-Z0-9_.\-{}]+)+`)
-	pathSegmentRegex         = regexp.MustCompile(`/([a-zA-Z0-9_.\-]+|\{[a-zA-Z0-9_.\-]+\})`)
-	pathContRegex            = regexp.MustCompile(`^\s+(/[a-zA-Z0-9_.\-{}]+|\?[a-zA-Z0-9_.\-]+=\S+|&[a-zA-Z0-9_.\-]+=\S+)`)
-	queryParamRegex          = regexp.MustCompile(`([a-zA-Z0-9_.\-]+)=(\S+)`)
-	responseLineCaptureRegex = regexp.MustCompile(`^--\s*(\d{3}):\s*(.*)`)
-	propertyCaptureRegex     = regexp.MustCompile(`^([a-zA-Z][a-zA-Z0-9_.\-]*):\s*(.+)`)
-)
 
 // NewParser creates a new parser for a .apimock file
 func NewParser(filename string) (*Parser, error) {
@@ -43,36 +30,53 @@ func NewParser(filename string) (*Parser, error) {
 	}, nil
 }
 
-// Parse parses the file and returns the AST
+// Parse parses the file and returns the AST using a tokenized input
 func (p *Parser) Parse() (*APIMockFile, error) {
 	ast := NewAPIMockFile()
 
+	lexer := NewLexer(p.lines)
+	tokens, err := lexer.Lex()
+	if err != nil {
+		return nil, err
+	}
+
+	i := 0
 	// Skip leading blank lines
-	p.skipBlankLines()
+	for i < len(tokens) && tokens[i].Type == TokenBlankLine {
+		i++
+	}
 
 	// Optional request section
-	if p.lineNum < len(p.lines) && !p.isResponseLine(p.currentLine()) {
-		req, err := p.parseRequestSection()
+	if i < len(tokens) && tokens[i].Type == TokenRequestLine {
+		req, err := p.parseRequestSection(tokens, &i)
 		if err != nil {
 			return nil, err
 		}
 		ast.Request = req
-		p.skipBlankLines()
+		// Skip blanks before responses
+		for i < len(tokens) && tokens[i].Type == TokenBlankLine {
+			i++
+		}
 	}
 
 	// At least one response section required
-	if p.lineNum >= len(p.lines) {
+	if i >= len(tokens) || tokens[i].Type != TokenResponseStart {
 		return nil, fmt.Errorf("expected at least one response section")
 	}
 
 	// Parse all response sections
-	for p.lineNum < len(p.lines) {
-		p.skipBlankLines()
-		if p.lineNum >= len(p.lines) {
+	for i < len(tokens) {
+		// Skip blanks
+		for i < len(tokens) && tokens[i].Type == TokenBlankLine {
+			i++
+		}
+		if i >= len(tokens) {
 			break
 		}
-
-		resp, err := p.parseResponseSection()
+		if tokens[i].Type != TokenResponseStart {
+			break
+		}
+		resp, err := p.parseResponseSection(tokens, &i)
 		if err != nil {
 			return nil, err
 		}
@@ -86,260 +90,122 @@ func (p *Parser) Parse() (*APIMockFile, error) {
 	return ast, nil
 }
 
-// parseRequestSection parses the request section
-func (p *Parser) parseRequestSection() (*RequestSection, error) {
+// parseRequestSection parses the request section using tokens
+func (p *Parser) parseRequestSection(tokens []Token, i *int) (*RequestSection, error) {
 	req := NewRequestSection()
 
-	// Parse method line (method + path + continuations)
-	if err := p.parseMethodLine(req); err != nil {
-		return nil, err
+	if *i >= len(tokens) || tokens[*i].Type != TokenRequestLine {
+		return nil, fmt.Errorf("line %d: expected method/path line", tokens[*i].Line)
 	}
 
-	// Parse headers (properties)
-	for p.lineNum < len(p.lines) {
-		line := p.currentLine()
-		if p.isBlankLine(line) || p.isResponseLine(line) {
-			break
-		}
+	// Request line
+	req.Method = tokens[*i].Method
+	req.Path = tokens[*i].Path
+	req.PathSegments = append(req.PathSegments, tokens[*i].PathSegments...)
+	*i++
 
-		matches := propertyCaptureRegex.FindStringSubmatch(line)
-		if matches != nil {
-			key := matches[1]
-			value := strings.TrimSpace(matches[2])
-			req.Headers[key] = value
-			p.lineNum++
-		} else {
-			// Not a property - must be start of body
-			break
-		}
-	}
-
-	// Parse optional body
-	if p.lineNum < len(p.lines) && p.isBlankLine(p.currentLine()) {
-		p.lineNum++ // skip blank line
-	}
-
-	// Read body lines
+	// Consume continuations, query params, headers until body or response start
+	inBody := false
 	bodyLines := make([]string, 0)
-	for p.lineNum < len(p.lines) {
-		line := p.currentLine()
-
-		// Stop if we hit a response line
-		if p.isResponseLine(line) {
-			break
-		}
-
-		// Stop if blank lines followed by response
-		if p.isBlankLine(line) {
-			nextNonBlank := p.lineNum + 1
-			for nextNonBlank < len(p.lines) && p.isBlankLine(p.lines[nextNonBlank]) {
-				nextNonBlank++
+	for *i < len(tokens) {
+		tok := tokens[*i]
+		switch tok.Type {
+		case TokenPathContinuation:
+			if inBody {
+				goto DONE
 			}
-			if nextNonBlank < len(p.lines) && p.isResponseLine(p.lines[nextNonBlank]) {
-				break
+			req.Path += tok.PathContinuation
+			req.PathSegments = append(req.PathSegments, tok.PathSegments...)
+			*i++
+		case TokenQueryParam:
+			if inBody {
+				goto DONE
 			}
+			req.QueryParams[tok.Key] = tok.Value
+			*i++
+		case TokenHeader:
+			if inBody {
+				// Treat as body content if header lines appear after body start
+				bodyLines = append(bodyLines, tok.Raw)
+				*i++
+				continue
+			}
+			req.Headers[tok.Key] = tok.Value
+			*i++
+		case TokenBlankLine:
+			// Blank line indicates start of body (if any)
+			inBody = true
+			*i++
+		case TokenBodyLine:
+			inBody = true
+			bodyLines = append(bodyLines, tok.Raw)
+			*i++
+		case TokenResponseStart:
+			// End of request section
+			goto DONE
+		default:
+			// Unknown or EOF
+			goto DONE
 		}
-
-		bodyLines = append(bodyLines, line)
-		p.lineNum++
 	}
 
+DONE:
 	if len(bodyLines) > 0 {
 		req.BodySchema = strings.Join(bodyLines, "\n")
 	}
-
 	return req, nil
 }
 
-// parseMethodLine parses the method and path
-func (p *Parser) parseMethodLine(req *RequestSection) error {
-	if p.lineNum >= len(p.lines) {
-		return fmt.Errorf("line %d: expected method line or path", p.lineNum+1)
-	}
-
-	line := p.currentLine()
-
-	// Extract HTTP method (optional)
-	methodMatches := httpMethodRegex.FindStringSubmatch(line)
-	if methodMatches != nil {
-		req.Method = strings.TrimSpace(methodMatches[1])
-		// Remove method from line to get path
-		line = strings.TrimSpace(line[len(methodMatches[0]):])
-	}
-
-	// Extract path
-	pathMatches := pathStartRegex.FindString(line)
-	if pathMatches == "" {
-		// If no method was found, try to parse the whole line as path
-		if req.Method == "" {
-			pathMatches = pathStartRegex.FindString(p.currentLine())
-		}
-		if pathMatches == "" {
-			return fmt.Errorf("line %d: invalid path format", p.lineNum+1)
-		}
-	}
-
-	req.Path = pathMatches
-	req.PathSegments = p.parsePathSegments(pathMatches)
-
-	p.lineNum++
-
-	// Parse path continuations (indented lines)
-	for p.lineNum < len(p.lines) {
-		line := p.currentLine()
-		matches := pathContRegex.FindStringSubmatch(line)
-		if matches == nil {
-			break
-		}
-
-		continuation := strings.TrimSpace(matches[1])
-
-		// Check if it's a path segment
-		if strings.HasPrefix(continuation, "/") {
-			req.Path += continuation
-			segments := p.parsePathSegments(continuation)
-			req.PathSegments = append(req.PathSegments, segments...)
-		} else if strings.HasPrefix(continuation, "?") || strings.HasPrefix(continuation, "&") {
-			// Parse query parameters
-			p.parseQueryParams(continuation[1:], req.QueryParams)
-		}
-
-		p.lineNum++
-	}
-
-	return nil
-}
-
-// parsePathSegments parses path into segments
-func (p *Parser) parsePathSegments(path string) []PathSegment {
-	segments := make([]PathSegment, 0)
-	matches := pathSegmentRegex.FindAllStringSubmatch(path, -1)
-
-	for _, match := range matches {
-		segment := match[1]
-		if strings.HasPrefix(segment, "{") && strings.HasSuffix(segment, "}") {
-			// It's a parameter
-			paramName := segment[1 : len(segment)-1]
-			segments = append(segments, PathSegment{
-				Value:       segment,
-				IsParameter: true,
-				Name:        paramName,
-			})
-		} else {
-			// It's a literal segment
-			segments = append(segments, PathSegment{
-				Value:       segment,
-				IsParameter: false,
-			})
-		}
-	}
-
-	return segments
-}
-
-// parseQueryParams parses query parameters
-func (p *Parser) parseQueryParams(queryString string, params map[string]string) {
-	matches := queryParamRegex.FindAllStringSubmatch(queryString, -1)
-	for _, match := range matches {
-		key := match[1]
-		value := match[2]
-		params[key] = value
-	}
-}
-
-// parseResponseSection parses a response section
-func (p *Parser) parseResponseSection() (ResponseSection, error) {
+// parseResponseSection parses a response section using tokens
+func (p *Parser) parseResponseSection(tokens []Token, i *int) (ResponseSection, error) {
 	resp := NewResponseSection()
 
-	if p.lineNum >= len(p.lines) {
-		return resp, fmt.Errorf("unexpected end of file")
+	if *i >= len(tokens) || tokens[*i].Type != TokenResponseStart {
+		return resp, fmt.Errorf("line %d: invalid response line", tokens[*i].Line)
 	}
+	resp.StatusCode = tokens[*i].StatusCode
+	resp.Description = tokens[*i].Description
+	*i++
 
-	// Parse response line: -- 200: Description
-	line := p.currentLine()
-	matches := responseLineCaptureRegex.FindStringSubmatch(line)
-	if matches == nil {
-		return resp, fmt.Errorf("line %d: invalid response line format: '%s'", p.lineNum+1, line)
-	}
-
-	// Extract status code
-	statusCode, err := strconv.Atoi(matches[1])
-	if err != nil {
-		return resp, fmt.Errorf("line %d: invalid status code: %s", p.lineNum+1, matches[1])
-	}
-	resp.StatusCode = statusCode
-	resp.Description = strings.TrimSpace(matches[2])
-
-	p.lineNum++
-
-	// Parse headers (properties)
-	for p.lineNum < len(p.lines) {
-		line := p.currentLine()
-		if p.isBlankLine(line) {
-			break
+	// Parse headers
+	for *i < len(tokens) {
+		tok := tokens[*i]
+		if tok.Type == TokenHeader {
+			resp.Headers[tok.Key] = tok.Value
+			*i++
+			continue
 		}
-		if p.isResponseLine(line) {
-			// Next response section
-			return resp, nil
-		}
-
-		propMatches := propertyCaptureRegex.FindStringSubmatch(line)
-		if propMatches != nil {
-			key := propMatches[1]
-			value := strings.TrimSpace(propMatches[2])
-			resp.Headers[key] = value
-			p.lineNum++
-		} else {
-			return resp, fmt.Errorf("line %d: invalid response property: '%s'", p.lineNum+1, line)
-		}
+		break
 	}
 
-	// Parse optional response body
-	if p.lineNum < len(p.lines) && p.isBlankLine(p.currentLine()) {
-		p.lineNum++ // skip blank line
+	// Optional blank line
+	if *i < len(tokens) && tokens[*i].Type == TokenBlankLine {
+		*i++
 	}
 
-	// Read body lines
+	// Parse body lines until next response or EOF
 	bodyLines := make([]string, 0)
-	for p.lineNum < len(p.lines) {
-		line := p.currentLine()
-		if p.isResponseLine(line) {
+	for *i < len(tokens) {
+		tok := tokens[*i]
+		if tok.Type == TokenResponseStart {
 			break
 		}
-		bodyLines = append(bodyLines, line)
-		p.lineNum++
+		if tok.Type == TokenBodyLine || tok.Type == TokenBlankLine || tok.Type == TokenHeader {
+			// Treat any content here as body (including header-like lines)
+			bodyLines = append(bodyLines, tok.Raw)
+			*i++
+			continue
+		}
+		break
 	}
 
+	// Remove trailing blank lines from body
+	for len(bodyLines) > 0 && strings.TrimSpace(bodyLines[len(bodyLines)-1]) == "" {
+		bodyLines = bodyLines[:len(bodyLines)-1]
+	}
 	if len(bodyLines) > 0 {
-		// Remove trailing blank lines
-		for len(bodyLines) > 0 && strings.TrimSpace(bodyLines[len(bodyLines)-1]) == "" {
-			bodyLines = bodyLines[:len(bodyLines)-1]
-		}
 		resp.Body = strings.Join(bodyLines, "\n")
 	}
 
 	return resp, nil
-}
-
-// Helper methods
-
-func (p *Parser) currentLine() string {
-	if p.lineNum >= len(p.lines) {
-		return ""
-	}
-	return p.lines[p.lineNum]
-}
-
-func (p *Parser) isBlankLine(line string) bool {
-	return strings.TrimSpace(line) == ""
-}
-
-func (p *Parser) isResponseLine(line string) bool {
-	return strings.HasPrefix(strings.TrimSpace(line), "--")
-}
-
-func (p *Parser) skipBlankLines() {
-	for p.lineNum < len(p.lines) && p.isBlankLine(p.currentLine()) {
-		p.lineNum++
-	}
 }
