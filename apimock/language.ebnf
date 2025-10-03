@@ -1,0 +1,61 @@
+
+(* APIMock file definition *)
+apimock = [ request_section , blank_lines ] , response_section , { blank_lines , response_section } ;
+
+(* Request section: define the structure of the http request *)
+request_section = method_line ,
+                  { request_property } ,
+                  [ body_schema ] ;
+
+(* Method line: define the structure of the http request method and path
+   Ex: POST /api/users
+*)
+method_line = [ http_method , SP ] , path_start , EOL , { path_continuation };
+
+http_method = "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "HEAD" | "OPTIONS" | "TRACE" | "CONNECT" ;
+
+path_start = "/" , path_segment , { "/" , path_segment } ;
+
+(* Path segment can be an identifier or a placeholder 
+   Ex: users or {userId}
+*)
+path_segment = identifier | "{" , identifier , "}" ;
+path_continuation = indent ,  ( "/", path_segment | "?" , query_parameters | "&" , query_parameters ), EOL ;
+
+query_parameters = identifier , "=" , query_parameters_value ;
+query_parameters_value = 1*<any_char_except_EOL_or_space> ;
+
+request_property = property_key , ":", SP? , property_value , EOL ;
+
+body_schema = body_schema_line , { body_schema_line } ;
+body_schema_line = 1*<any_char_except_EOL> , EOL ;
+
+blank_lines = 1* ( SP* , EOL ) ;
+
+
+(* Response section: define the structure of the http response *)
+response_section = response_line ,
+                   { response_property } ,
+                   EOL ,
+                   [ response_body ] ;
+
+response_line = "--", SP? , status_code , ":", SP?, [ description ] , EOL ;
+
+status_code = digit , digit , digit ;
+description = 1*<any_char_except_EOL> ;
+
+response_property = property_key , ":", SP? , property_value , EOL ;
+response_body = response_body_line , { response_body_line } ;
+response_body_line = 1*<any_char_except_EOL> , EOL ;
+
+property_key = identifier ;
+property_value = 1*<any_char_except_EOL> ;
+
+identifier = letter , { letter | digit | "_" | "-" | "." } ;
+letter = "A".."Z" | "a".."z" ;
+digit = "0".."9" ;
+any_char_except_EOL = ? any character except end of line ? ;
+any_char_except_EOL_or_space = ? any character except end of line or space ? ;
+SP = " " | "\t" ;
+EOL = "\n" | "\r\n" ;
+indent = SP+ ;
