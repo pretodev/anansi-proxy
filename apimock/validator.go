@@ -338,34 +338,3 @@ func ValidateDirectory(dir string) (int, int, error) {
 
 	return valid, invalid, nil
 }
-
-func main() {
-	if len(os.Args) < 2 {
-		fmt.Println("Usage: go run validator.go <directory>")
-		fmt.Println("Example: go run validator.go ./examples")
-		os.Exit(1)
-	}
-
-	dir := os.Args[1]
-
-	fmt.Println("╔════════════════════════════════════════════╗")
-	fmt.Println("║   APIMock Grammar Validator (EBNF)        ║")
-	fmt.Println("╚════════════════════════════════════════════╝")
-	fmt.Println()
-
-	valid, invalid, err := ValidateDirectory(dir)
-	if err != nil {
-		fmt.Printf("Error: %v\n", err)
-		os.Exit(1)
-	}
-
-	fmt.Println("╔════════════════════════════════════════════╗")
-	fmt.Printf("║  Total: %d files                           \n", valid+invalid)
-	fmt.Printf("║  ✅ Valid: %d                              \n", valid)
-	fmt.Printf("║  ❌ Invalid: %d                            \n", invalid)
-	fmt.Println("╚════════════════════════════════════════════╝")
-
-	if invalid > 0 {
-		os.Exit(1)
-	}
-}

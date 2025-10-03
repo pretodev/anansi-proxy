@@ -8,15 +8,15 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 EXAMPLES_DIR="${SCRIPT_DIR}/examples"
 
-echo "Building validator..."
+echo "Building apimock..."
 cd "$SCRIPT_DIR"
-go build -o validator validator.go
+go build -o apimock .
 
 echo ""
 echo "Running validation..."
 echo ""
 
-./validator "$EXAMPLES_DIR"
+./apimock validate "$EXAMPLES_DIR"
 
 # Cleanup
 rm -f validator
