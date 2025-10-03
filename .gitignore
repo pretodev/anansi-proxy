@@ -7,8 +7,19 @@
 *.test
 *.out
 
+# Built binaries
+/bin/
+/apimock
+/anansi-proxy
+/cmd/apimock/apimock
+/cmd/validator/validator
+/cmd/server/server
+apimock/apimock
+apimock/validator
+
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.cov
+*.coverprofile
 
 # Dependency directories (remove the comment below if you use Go modules)
 vendor/
@@ -29,5 +40,10 @@ go.work.sum
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
 
 
