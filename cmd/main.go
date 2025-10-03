@@ -28,7 +28,7 @@ func main() {
 		flag.Usage()
 		os.Exit(1)
 	}
-	endpoint, err := endpoint.Parse(resPath)
+	endpoint, err := endpoint.ParseAPIMock(resPath)
 	if err != nil {
 		fmt.Printf("Error parsing file: %v\n", err)
 		os.Exit(1)
