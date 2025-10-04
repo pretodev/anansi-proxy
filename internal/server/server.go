@@ -32,20 +32,6 @@ func New(endpoints []*endpoint.EndpointWithFile) *Server {
 	return s
 }
 
-func (s *Server) createHandler(endpointIndex int) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ep := s.endpoints[endpointIndex].Schema
-		currentResponse := ep.Responses[0]
-
-		if currentResponse.ContentType != "" {
-			w.Header().Set("Content-Type", currentResponse.ContentType)
-		}
-
-		w.WriteHeader(currentResponse.StatusCode)
-		fmt.Fprint(w, currentResponse.Body)
-	}
-}
-
 func (s *Server) createHandlerFromEndpoint(ep *endpoint.EndpointWithFile) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		currentResponse := ep.Schema.Responses[0]

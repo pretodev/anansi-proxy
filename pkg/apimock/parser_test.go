@@ -83,9 +83,9 @@ Content-Type: application/json
 		}
 	}
 
-	// Check first response has header
-	if ast.Responses[0].Headers["Content-Type"] != "application/json" {
-		t.Errorf("expected Content-Type header, got %v", ast.Responses[0].Headers)
+	// Check first response has property
+	if ast.Responses[0].Properties["Content-Type"] != "application/json" {
+		t.Errorf("expected Content-Type property, got %v", ast.Responses[0].Properties)
 	}
 }
 
@@ -124,8 +124,8 @@ Content-Type: application/json
 		t.Errorf("expected path /api/users, got %s", ast.Request.Path)
 	}
 
-	if ast.Request.Headers["Content-Type"] != "application/json" {
-		t.Errorf("expected Content-Type header")
+	if ast.Request.Properties["Content-Type"] != "application/json" {
+		t.Errorf("expected Content-Type property, got %v", ast.Request.Properties)
 	}
 
 	if !strings.Contains(ast.Request.BodySchema, "John") {
@@ -343,8 +343,8 @@ Content-Type: application/json
 	if len(ast.Request.QueryParams) != 2 {
 		t.Errorf("expected 2 query params, got %d", len(ast.Request.QueryParams))
 	}
-	if len(ast.Request.Headers) != 2 {
-		t.Errorf("expected 2 headers, got %d", len(ast.Request.Headers))
+	if len(ast.Request.Properties) != 2 {
+		t.Errorf("expected 2 properties, got %d", len(ast.Request.Properties))
 	}
 
 	// Verify responses
@@ -360,9 +360,9 @@ Content-Type: application/json
 		}
 	}
 
-	// Check first response headers
-	if len(ast.Responses[0].Headers) != 2 {
-		t.Errorf("expected 2 headers in first response, got %d", len(ast.Responses[0].Headers))
+	// Check first response properties
+	if len(ast.Responses[0].Properties) != 2 {
+		t.Errorf("expected 2 properties in first response, got %d", len(ast.Responses[0].Properties))
 	}
 }
 

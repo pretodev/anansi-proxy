@@ -37,8 +37,8 @@ func TestNewRequestSection(t *testing.T) {
 		t.Error("expected QueryParams to be initialized")
 	}
 
-	if req.Headers == nil {
-		t.Error("expected Headers to be initialized")
+	if req.Properties == nil {
+		t.Error("expected Properties to be initialized")
 	}
 
 	if len(req.PathSegments) != 0 {
@@ -49,20 +49,20 @@ func TestNewRequestSection(t *testing.T) {
 		t.Errorf("expected empty QueryParams, got length %d", len(req.QueryParams))
 	}
 
-	if len(req.Headers) != 0 {
-		t.Errorf("expected empty Headers, got length %d", len(req.Headers))
+	if len(req.Properties) != 0 {
+		t.Errorf("expected empty Properties, got length %d", len(req.Properties))
 	}
 }
 
 func TestNewResponseSection(t *testing.T) {
 	resp := NewResponseSection()
 
-	if resp.Headers == nil {
-		t.Error("expected Headers to be initialized")
+	if resp.Properties == nil {
+		t.Error("expected Properties to be initialized")
 	}
 
-	if len(resp.Headers) != 0 {
-		t.Errorf("expected empty Headers, got length %d", len(resp.Headers))
+	if len(resp.Properties) != 0 {
+		t.Errorf("expected empty Properties, got length %d", len(resp.Properties))
 	}
 
 	if resp.StatusCode != 0 {
@@ -130,8 +130,8 @@ func TestAPIMockFile_Structure(t *testing.T) {
 			QueryParams: map[string]string{
 				"active": "true",
 			},
-			Headers: map[string]string{
-				"Content-Type": "application/json",
+			Properties: map[string]string{
+				"Accept": "application/json",
 			},
 			BodySchema: `{"name": "test"}`,
 		},
@@ -139,7 +139,7 @@ func TestAPIMockFile_Structure(t *testing.T) {
 			{
 				StatusCode:  201,
 				Description: "Created",
-				Headers: map[string]string{
+				Properties: map[string]string{
 					"Location": "/api/users/123",
 				},
 				Body: `{"id": 123}`,
@@ -147,7 +147,7 @@ func TestAPIMockFile_Structure(t *testing.T) {
 			{
 				StatusCode:  400,
 				Description: "Bad Request",
-				Headers:     map[string]string{},
+				Properties:  map[string]string{},
 				Body:        `{"error": "Invalid input"}`,
 			},
 		},
@@ -166,8 +166,8 @@ func TestAPIMockFile_Structure(t *testing.T) {
 		t.Error("expected query param 'active=true'")
 	}
 
-	if file.Request.Headers["Content-Type"] != "application/json" {
-		t.Error("expected Content-Type header")
+	if file.Request.Properties["Accept"] != "application/json" {
+		t.Error("expected Accept property")
 	}
 
 	// Verify responses
