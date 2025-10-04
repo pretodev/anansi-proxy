@@ -42,7 +42,7 @@ func TestNew(t *testing.T) {
 	sm := state.New(3)
 	ep := createTestEndpoint()
 
-	s := New(sm, ep)
+	s := New(ep)
 
 	if s == nil {
 		t.Fatal("New() returned nil")

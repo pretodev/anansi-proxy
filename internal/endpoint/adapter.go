@@ -7,6 +7,12 @@ import (
 	"github.com/pretodev/anansi-proxy/pkg/apimock"
 )
 
+// EndpointWithFile represents an endpoint schema along with its source file
+type EndpointWithFile struct {
+	Schema   *EndpointSchema
+	FilePath string
+}
+
 // FromAPIMockFile converts an APIMockFile to an EndpointSchema.
 // This adapter allows the internal server and UI to work with the apimock package.
 func FromAPIMockFile(ast *apimock.APIMockFile) (*EndpointSchema, error) {
@@ -20,12 +26,12 @@ func FromAPIMockFile(ast *apimock.APIMockFile) (*EndpointSchema, error) {
 		Responses: make([]Response, 0, len(ast.Responses)),
 	}
 
-	method := ""
-	if ast.Request.Method != "" {
-		method = strings.ToUpper(ast.Request.Method) + " "
-	}
-
 	if ast.Request != nil {
+		method := ""
+		if ast.Request.Method != "" {
+			method = strings.ToUpper(ast.Request.Method) + " "
+		}
+
 		endpoint.Route = method + ast.Request.Path
 
 		// Get Content-Type from request properties if available
@@ -90,4 +96,38 @@ func ParseAPIMock(filePath string) (*EndpointSchema, error) {
 	}
 
 	return endpoint, nil
+}
+
+// ParseAPIMockFiles parses multiple .apimock files and returns a slice of EndpointWithFile.
+// This function processes each file and collects all successfully parsed endpoints.
+func ParseAPIMockFiles(filePaths ...string) ([]*EndpointWithFile, error) {
+	if len(filePaths) == 0 {
+		return nil, fmt.Errorf("no file paths provided")
+	}
+
+	endpoints := make([]*EndpointWithFile, 0, len(filePaths))
+	var errors []string
+
+	for _, filePath := range filePaths {
+		endpoint, err := ParseAPIMock(filePath)
+		if err != nil {
+			errors = append(errors, fmt.Sprintf("- %s: %v", filePath, err))
+			continue
+		}
+
+		endpoints = append(endpoints, &EndpointWithFile{
+			Schema:   endpoint,
+			FilePath: filePath,
+		})
+	}
+
+	if len(errors) > 0 {
+		if len(endpoints) == 0 {
+			return nil, fmt.Errorf("failed to parse all files:\n%s", strings.Join(errors, "\n"))
+		}
+		// Log warnings but continue if we have at least some valid endpoints
+		fmt.Printf("Warning: some files failed to parse:\n%s\n", strings.Join(errors, "\n"))
+	}
+
+	return endpoints, nil
 }

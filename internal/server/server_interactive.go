@@ -5,22 +5,25 @@ import (
 	"net/http"
 
 	"github.com/pretodev/anansi-proxy/internal/endpoint"
+	"github.com/pretodev/anansi-proxy/internal/state"
 )
 
-type Server struct {
-	endpoints []*endpoint.EndpointWithFile
+type InteractiveServer struct {
+	state    *state.StateManager
+	endpoint *endpoint.EndpointSchema
 }
 
-func New(endpoints []*endpoint.EndpointWithFile) *Server {
-	return &Server{
-		endpoints: endpoints,
+func NewInteractive(sm *state.StateManager, endpoint *endpoint.EndpointSchema) *InteractiveServer {
+	return &InteractiveServer{
+		state:    sm,
+		endpoint: endpoint,
 	}
 }
 
-func (s *Server) createHandler(endpointIndex int) http.HandlerFunc {
+func (s *InteractiveServer) handler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ep := s.endpoints[endpointIndex].Schema
-		currentResponse := ep.Responses[0]
+		responseIndex := s.state.Index()
+		currentResponse := s.endpoint.Responses[responseIndex]
 
 		if currentResponse.ContentType != "" {
 			w.Header().Set("Content-Type", currentResponse.ContentType)
@@ -31,16 +34,14 @@ func (s *Server) createHandler(endpointIndex int) http.HandlerFunc {
 	}
 }
 
-func (s *Server) Serve(port int) error {
+func (s *InteractiveServer) Serve(port int) error {
 	if port <= 0 || port > 65535 {
 		return fmt.Errorf("invalid port number %d: must be between 1 and 65535", port)
 	}
+
 	addr := fmt.Sprintf(":%d", port)
 
-	for i, ep := range s.endpoints {
-		route := ep.Schema.Route
-		http.HandleFunc(route, s.createHandler(i))
-	}
+	http.HandleFunc(s.endpoint.Route, s.handler())
 
 	fmt.Printf("\nStarting server on port %d...\n", port)
 	if err := http.ListenAndServe(addr, nil); err != nil {

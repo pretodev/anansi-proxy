@@ -4,12 +4,15 @@ A lightweight HTTP mock server that serves predefined responses from configurati
 
 ## Features
 
-- 📄 Parse HTTP response definitions from simple text format (`.hresp` files)
+- 📄 Parse HTTP response definitions from `.apimock` files
 - 🎯 Interactive terminal UI to dynamically select which response to serve
 - 🚀 Lightweight HTTP server that serves the selected response to all requests
 - ⚙️ Support for custom status codes, content types, and response headers
 - 🔄 Real-time response switching without server restart
 - 📁 Multiple example response files included
+- 🌳 Recursive directory scanning for `.apimock` files
+- 🔀 Serve multiple endpoints from multiple files simultaneously
+- 📂 Automatic exclusion of common directories (.git, node_modules, etc.)
 
 ## Installation
 
@@ -24,33 +27,51 @@ go install github.com/pretodev/anansi-proxy@latest
 ```bash
 git clone https://github.com/pretodev/anansi-proxy.git
 cd anansi-proxy
-go build -o anansi-proxy .
+go build -o anansi-proxy ./cmd/main.go
 ```
 
 ## Usage
 
 ```bash
-anansi-proxy -f <response-file> [-p <port>] [-it]
+anansi-proxy [options] <file_or_directory>...
 ```
 
 ### Command Line Options
 
-- `-f, --file`: Path to the HTTP response file (required)
+- `<file_or_directory>...`: One or more paths to `.apimock` files or directories (required)
 - `-p, --port`: Port number for the HTTP server (default: 8977)
 - `-it`: Enable interactive mode with terminal UI for response selection
 
 ### Usage Examples
 
-#### Interactive Mode (Default)
+#### Single File
 ```bash
-# Run with interactive UI to select responses
-anansi-proxy -f examples/simple.hresp -p 8080 -it
+# Serve a single .apimock file
+anansi-proxy ./docs/apimock/examples/simple.apimock
 ```
 
-#### Non-Interactive Mode
+#### Multiple Files
 ```bash
-# Run with the first response automatically selected
-anansi-proxy -f examples/simple.hresp -p 8080
+# Serve multiple .apimock files
+anansi-proxy ./docs/apimock/examples/simple.apimock ./docs/apimock/examples/json.apimock
+```
+
+#### Directory (Recursive)
+```bash
+# Serve all .apimock files from a directory (searches recursively)
+anansi-proxy ./docs/apimock/examples
+```
+
+#### With Custom Port
+```bash
+# Specify a custom port
+anansi-proxy -p 8080 ./docs/apimock/examples
+```
+
+#### Interactive Mode
+```bash
+# Run with interactive UI to select responses
+anansi-proxy -it ./docs/apimock/examples
 ```
 
 #### Quick Start
@@ -58,8 +79,8 @@ anansi-proxy -f examples/simple.hresp -p 8080
 # Install the tool
 go install github.com/pretodev/anansi-proxy@latest
 
-# Run with provided example
-anansi-proxy -f examples/simple.hresp -it
+# Run with provided examples
+anansi-proxy ./docs/apimock/examples
 ```
 
 ## Response File Format
@@ -105,31 +126,40 @@ Content-Type: application/json
 
 ## Interactive UI
 
-Once started, use the interactive terminal UI to:
+Once started in interactive mode (`-it`), use the terminal UI to:
 
-- Navigate responses with arrow keys or `j`/`k`
-- Select which response the server should return
+- Navigate responses with arrow keys or `j`/`k` (up/down)
+- Switch between endpoints with arrow keys or `h`/`l` (left/right) when serving multiple files
+- Select which response the server should return for each endpoint
 - Quit with `q` or `Ctrl+C`
 
-The HTTP server will serve the currently selected response to all incoming requests.
+The HTTP server will serve the currently selected response for each endpoint to all incoming requests.
 
 ## Examples
 
-The `examples/` directory contains various `.hresp` files demonstrating different response types:
+The `docs/apimock/examples/` directory contains various `.apimock` files demonstrating different response types:
 
-- `simple.hresp` - Basic JSON and text responses with different status codes
-- `json.hresp` - JSON response examples
-- `xml.hresp` - XML response format
-- `yaml.hresp` - YAML response format
-- `form.hresp` - Form data responses
-- `multipart-form-data.hresp` - Multipart form responses
-- `octet-stream.hresp` - Binary data responses
-- `raw.hresp` - Raw text responses
-- `get-json.hresp` - GET request JSON responses
+- `simple.apimock` - Basic JSON and text responses with different status codes
+- `json.apimock` - JSON response examples with request schema
+- `xml.apimock` - XML response format
+- `yaml.apimock` - YAML response format
+- `form.apimock` - Form data responses
+- `multipart-form-data.apimock` - Multipart form responses
+- `octet-stream.apimock` - Binary data responses
+- `raw.apimock` - Raw text responses
+- `get-json.apimock` - GET request JSON responses
+- `query-path-params.apimock` - Query and path parameter examples
+
+### Directory Scanning
+
+When you provide a directory path, Anansi Proxy will:
+- Recursively search for all `.apimock` files
+- Automatically exclude common directories like `.git`, `node_modules`, `.idea`, `.vscode`, `vendor`, `build`, `dist`, etc.
+- Serve all found endpoints on the specified port
 
 ### Example Response File
 
-See `examples/simple.hresp` for a basic example:
+See `docs/apimock/examples/simple.apimock` for a basic example:
 
 ## Requirements
 
