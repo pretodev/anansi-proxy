@@ -473,3 +473,245 @@ func TestServer_Serve_ValidPortRange(t *testing.T) {
 		}
 	}
 }
+
+func TestServer_RequestValidation_JSON(t *testing.T) {
+	// Create a JSON schema validator
+	schema := `{
+		"type": "object",
+		"properties": {
+			"name": {"type": "string"},
+			"age": {"type": "number"}
+		},
+		"required": ["name"]
+	}`
+
+	validator, err := endpoint.NewJsonSchemaValidator(schema)
+	if err != nil {
+		t.Fatalf("Failed to create validator: %v", err)
+	}
+
+	ep := &endpoint.EndpointWithFile{
+		Schema: &endpoint.EndpointSchema{
+			Route:     "POST /api/users",
+			Accept:    "application/json",
+			Body:      schema,
+			Validator: validator,
+			Responses: []endpoint.Response{
+				{
+					Title:       "User created",
+					Body:        `{"id": 123, "name": "John"}`,
+					ContentType: "application/json",
+					StatusCode:  201,
+				},
+			},
+		},
+		FilePath: "/test/mock.apimock",
+	}
+
+	server := New([]*endpoint.EndpointWithFile{ep})
+	mux := server.createTestMux()
+
+	tests := []struct {
+		name           string
+		body           string
+		expectedStatus int
+		expectError    bool
+	}{
+		{
+			name:           "Valid request body",
+			body:           `{"name": "John", "age": 30}`,
+			expectedStatus: 201,
+			expectError:    false,
+		},
+		{
+			name:           "Valid request without optional field",
+			body:           `{"name": "Jane"}`,
+			expectedStatus: 201,
+			expectError:    false,
+		},
+		{
+			name:           "Invalid request - missing required field",
+			body:           `{"age": 25}`,
+			expectedStatus: 400,
+			expectError:    true,
+		},
+		{
+			name:           "Invalid request - wrong type",
+			body:           `{"name": 123}`,
+			expectedStatus: 400,
+			expectError:    true,
+		},
+		{
+			name:           "Invalid request - malformed JSON",
+			body:           `{invalid json}`,
+			expectedStatus: 400,
+			expectError:    true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPost, "/api/users", io.NopCloser(io.Reader(io.NopCloser(io.Reader(&bodyReader{body: tt.body})))))
+			req.Header.Set("Content-Type", "application/json")
+			rec := httptest.NewRecorder()
+
+			mux.ServeHTTP(rec, req)
+
+			if rec.Code != tt.expectedStatus {
+				t.Errorf("Expected status %d, got %d. Body: %s", tt.expectedStatus, rec.Code, rec.Body.String())
+			}
+
+			if tt.expectError && rec.Code != 400 {
+				t.Errorf("Expected error response (400), got %d", rec.Code)
+			}
+		})
+	}
+}
+
+func TestServer_RequestValidation_XML(t *testing.T) {
+	// Create an XML schema validator
+	schema := `<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="user">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="name" type="xs:string"/>
+        <xs:element name="age" type="xs:integer"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>`
+
+	validator, err := endpoint.NewXmlSchemaValidator(schema)
+	if err != nil {
+		t.Fatalf("Failed to create validator: %v", err)
+	}
+	defer func() {
+		if v, ok := validator.(*endpoint.XMLSchemaValidator); ok {
+			v.Free()
+		}
+	}()
+
+	ep := &endpoint.EndpointWithFile{
+		Schema: &endpoint.EndpointSchema{
+			Route:     "POST /api/users",
+			Accept:    "application/xml",
+			Body:      schema,
+			Validator: validator,
+			Responses: []endpoint.Response{
+				{
+					Title:       "User created",
+					Body:        `<user><name>John</name><age>30</age></user>`,
+					ContentType: "application/xml",
+					StatusCode:  201,
+				},
+			},
+		},
+		FilePath: "/test/mock.apimock",
+	}
+
+	server := New([]*endpoint.EndpointWithFile{ep})
+	mux := server.createTestMux()
+
+	tests := []struct {
+		name           string
+		body           string
+		expectedStatus int
+		expectError    bool
+	}{
+		{
+			name:           "Valid XML request",
+			body:           `<?xml version="1.0"?><user><name>John</name><age>30</age></user>`,
+			expectedStatus: 201,
+			expectError:    false,
+		},
+		{
+			name:           "Invalid XML - missing required element",
+			body:           `<?xml version="1.0"?><user><name>Jane</name></user>`,
+			expectedStatus: 400,
+			expectError:    true,
+		},
+		{
+			name:           "Invalid XML - wrong type",
+			body:           `<?xml version="1.0"?><user><name>Bob</name><age>not a number</age></user>`,
+			expectedStatus: 400,
+			expectError:    true,
+		},
+		{
+			name:           "Invalid XML syntax",
+			body:           `<user><name>Invalid</user>`,
+			expectedStatus: 400,
+			expectError:    true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPost, "/api/users", io.NopCloser(io.Reader(&bodyReader{body: tt.body})))
+			req.Header.Set("Content-Type", "application/xml")
+			rec := httptest.NewRecorder()
+
+			mux.ServeHTTP(rec, req)
+
+			if rec.Code != tt.expectedStatus {
+				t.Errorf("Expected status %d, got %d. Body: %s", tt.expectedStatus, rec.Code, rec.Body.String())
+			}
+
+			if tt.expectError && rec.Code != 400 {
+				t.Errorf("Expected error response (400), got %d", rec.Code)
+			}
+		})
+	}
+}
+
+func TestServer_NoValidation_WhenNoValidator(t *testing.T) {
+	// Endpoint without validator should accept any body
+	ep := &endpoint.EndpointWithFile{
+		Schema: &endpoint.EndpointSchema{
+			Route:     "POST /api/data",
+			Accept:    "application/json",
+			Validator: nil, // No validator
+			Responses: []endpoint.Response{
+				{
+					Title:       "Success",
+					Body:        `{"success": true}`,
+					ContentType: "application/json",
+					StatusCode:  200,
+				},
+			},
+		},
+		FilePath: "/test/mock.apimock",
+	}
+
+	server := New([]*endpoint.EndpointWithFile{ep})
+	mux := server.createTestMux()
+
+	// Even with invalid JSON, should succeed because no validation
+	req := httptest.NewRequest(http.MethodPost, "/api/data", io.NopCloser(io.Reader(&bodyReader{body: `{invalid json}`})))
+	rec := httptest.NewRecorder()
+
+	mux.ServeHTTP(rec, req)
+
+	if rec.Code != 200 {
+		t.Errorf("Expected status 200 (no validation), got %d", rec.Code)
+	}
+}
+
+// Helper type to create a ReadCloser from a string
+type bodyReader struct {
+	body string
+	pos  int
+}
+
+func (b *bodyReader) Read(p []byte) (n int, err error) {
+	if b.pos >= len(b.body) {
+		return 0, io.EOF
+	}
+	n = copy(p, b.body[b.pos:])
+	b.pos += n
+	return n, nil
+}
+
+func (b *bodyReader) Close() error {
+	return nil
+}

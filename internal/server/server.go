@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/pretodev/anansi-proxy/internal/endpoint"
@@ -34,6 +35,23 @@ func New(endpoints []*endpoint.EndpointWithFile) *Server {
 
 func (s *Server) createHandlerFromEndpoint(ep *endpoint.EndpointWithFile) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Validate request body if validator is present
+		if ep.Schema.Validator != nil {
+			// Read the request body
+			bodyBytes, err := io.ReadAll(r.Body)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Failed to read request body: %v", err), http.StatusBadRequest)
+				return
+			}
+			defer r.Body.Close()
+
+			// Validate the body against the schema
+			if err := ep.Schema.Validator.Validate(string(bodyBytes)); err != nil {
+				http.Error(w, fmt.Sprintf("Request validation failed: %v", err), http.StatusBadRequest)
+				return
+			}
+		}
+
 		currentResponse := ep.Schema.Responses[0]
 
 		if currentResponse.ContentType != "" {
