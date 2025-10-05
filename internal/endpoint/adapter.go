@@ -34,14 +34,17 @@ func FromAPIMockFile(ast *apimock.APIMockFile) (*EndpointSchema, error) {
 
 		endpoint.Route = method + ast.Request.Path
 
-		// Get Content-Type from request properties if available
 		if contentType, ok := ast.Request.Properties[RequestAcceptPropertyName]; ok {
 			endpoint.Accept = contentType
 		}
 
-		// Set body from request body schema if available
 		if ast.Request.BodySchema != "" {
 			endpoint.Body = ast.Request.BodySchema
+			validator, err := NewValidator(endpoint.Accept, endpoint.Body)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create schema validator: %w", err)
+			}
+			endpoint.Validator = validator
 		}
 	}
 

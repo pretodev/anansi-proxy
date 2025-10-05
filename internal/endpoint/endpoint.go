@@ -22,6 +22,7 @@ type EndpointSchema struct {
 	Route     string
 	Accept    string
 	Body      string
+	Validator SchemaValidator
 	Responses []Response
 }
 
