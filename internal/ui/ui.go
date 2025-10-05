@@ -83,7 +83,7 @@ func (m model) View() string {
 
 	b.WriteString("Select a response for the server:\n\n")
 
-	for i, res := range m.endpoint.Responses {
+	for i, res := range m.endpoint.SliceResponses() {
 		cursor := "  " // Not selected
 		line := fmt.Sprintf("[%d] %s", res.StatusCode, res.Title)
 

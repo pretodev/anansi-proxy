@@ -23,7 +23,7 @@ func FromAPIMockFile(ast *apimock.APIMockFile) (*EndpointSchema, error) {
 	endpoint := &EndpointSchema{
 		Route:     "/",
 		Accept:    DefaultContentType,
-		Responses: make([]Response, 0, len(ast.Responses)),
+		Responses: make(map[int][]Response),
 	}
 
 	if ast.Request != nil {
@@ -66,7 +66,14 @@ func FromAPIMockFile(ast *apimock.APIMockFile) (*EndpointSchema, error) {
 			response.ContentType = contentType
 		}
 
-		endpoint.Responses = append(endpoint.Responses, response)
+		if _, exists := endpoint.Responses[response.StatusCode]; !exists {
+			endpoint.Responses[response.StatusCode] = make([]Response, 0)
+		}
+
+		endpoint.Responses[response.StatusCode] = append(
+			endpoint.Responses[response.StatusCode],
+			response,
+		)
 	}
 
 	return endpoint, nil

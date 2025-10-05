@@ -23,7 +23,7 @@ func NewInteractive(sm *state.StateManager, endpoint *endpoint.EndpointSchema) *
 func (s *InteractiveServer) handler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		responseIndex := s.state.Index()
-		currentResponse := s.endpoint.Responses[responseIndex]
+		currentResponse := s.endpoint.SliceResponses()[responseIndex]
 
 		if currentResponse.ContentType != "" {
 			w.Header().Set("Content-Type", currentResponse.ContentType)
