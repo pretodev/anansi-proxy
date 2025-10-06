@@ -2,7 +2,10 @@
 // APIMock files define HTTP API mock specifications including requests and responses.
 package apimock
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // HTTP method constants
 const (
@@ -118,7 +121,10 @@ type Attribution struct {
 }
 
 func (a Attribution) String() string {
-	return fmt.Sprintf("%s >> %v", a.Value.String(), a.Variables)
+	if len(a.Variables) == 1 {
+		return fmt.Sprintf("(%s >> %s)", a.Value.String(), a.Variables[0])
+	}
+	return fmt.Sprintf("(%s >> %s)", a.Value.String(), strings.Join(a.Variables, ", "))
 }
 
 // Value represents primitive values and complex data structures.
@@ -134,7 +140,11 @@ type NumberValue struct {
 }
 
 func (n NumberValue) String() string {
-	return fmt.Sprintf("%v", n.Value)
+	// Format number without decimal if it's an integer
+	if n.Value == float64(int(n.Value)) {
+		return fmt.Sprintf("%d", int(n.Value))
+	}
+	return fmt.Sprintf("%g", n.Value)
 }
 
 func (n NumberValue) GetValue() interface{} {
@@ -179,9 +189,24 @@ type TableValue struct {
 
 func (t TableValue) String() string {
 	if t.IsArray {
-		return fmt.Sprintf("{array[%d]}", len(t.Array))
+		if len(t.Array) == 0 {
+			return "[]"
+		}
+		parts := make([]string, len(t.Array))
+		for i, v := range t.Array {
+			parts[i] = v.String()
+		}
+		return "[" + strings.Join(parts, ", ") + "]"
 	}
-	return fmt.Sprintf("{dict[%d]}", len(t.Dict))
+	// Dictionary
+	if len(t.Dict) == 0 {
+		return "{}"
+	}
+	parts := make([]string, 0, len(t.Dict))
+	for k, v := range t.Dict {
+		parts = append(parts, fmt.Sprintf("%s = %s", k, v.String()))
+	}
+	return "{" + strings.Join(parts, ", ") + "}"
 }
 
 func (t TableValue) GetValue() interface{} {
@@ -198,7 +223,11 @@ type RangeValue struct {
 }
 
 func (r RangeValue) String() string {
-	return fmt.Sprintf("%.0f..%.0f", r.Start, r.End)
+	// Format numbers without decimal if they're integers
+	if r.Start == float64(int(r.Start)) && r.End == float64(int(r.End)) {
+		return fmt.Sprintf("%d..%d", int(r.Start), int(r.End))
+	}
+	return fmt.Sprintf("%g..%g", r.Start, r.End)
 }
 
 func (r RangeValue) GetValue() interface{} {
@@ -251,10 +280,17 @@ type FunctionCall struct {
 }
 
 func (f FunctionCall) String() string {
-	if f.Target != nil {
-		return fmt.Sprintf("%s.%s(%d args)", f.Target.String(), f.Name, len(f.Args))
+	// Format arguments
+	argStrs := make([]string, len(f.Args))
+	for i, arg := range f.Args {
+		argStrs[i] = arg.String()
 	}
-	return fmt.Sprintf(".%s(%d args)", f.Name, len(f.Args))
+	argList := strings.Join(argStrs, ", ")
+
+	if f.Target != nil {
+		return fmt.Sprintf("%s.%s(%s)", f.Target.String(), f.Name, argList)
+	}
+	return fmt.Sprintf(".%s(%s)", f.Name, argList)
 }
 
 func (f FunctionCall) GetValue() interface{} {

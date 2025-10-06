@@ -165,7 +165,8 @@ DONE:
 }
 
 // parseResponseSection parses a response section using tokens.
-// It extracts the status code, description, headers, and body content.
+// It extracts the status code, description, headers, conditions, and body content.
+// The order is: response line -> properties -> conditions -> body.
 // Trailing blank lines are removed from the response body.
 func (p *Parser) parseResponseSection(tokens []Token, i *int) (ResponseSection, error) {
 	resp := NewResponseSection()
@@ -183,11 +184,26 @@ func (p *Parser) parseResponseSection(tokens []Token, i *int) (ResponseSection, 
 
 	*i++
 
-	// Parse headers
+	// Parse properties (headers)
 	for *i < len(tokens) {
 		tok := tokens[*i]
 		if tok.Type == TokenHeader {
 			resp.Properties[tok.Key] = tok.Value
+			*i++
+			continue
+		}
+		break
+	}
+
+	// Parse conditions
+	for *i < len(tokens) {
+		tok := tokens[*i]
+		if tok.Type == TokenConditionLine {
+			condition, err := p.parseConditionLine(tok)
+			if err != nil {
+				return resp, err
+			}
+			resp.Conditions = append(resp.Conditions, condition)
 			*i++
 			continue
 		}
@@ -224,4 +240,20 @@ func (p *Parser) parseResponseSection(tokens []Token, i *int) (ResponseSection, 
 	}
 
 	return resp, nil
+}
+
+// parseConditionLine parses a condition line token into a ConditionLine AST node.
+// It uses the ExpressionParser to parse the condition expression.
+func (p *Parser) parseConditionLine(token Token) (ConditionLine, error) {
+	parser := NewExpressionParser(token.ConditionExpression)
+	expr, err := parser.Parse()
+	if err != nil {
+		return ConditionLine{}, NewParseError(p.filename, token.Line, fmt.Sprintf("invalid condition expression: %s", err.Error()))
+	}
+
+	return ConditionLine{
+		Expression:    expr,
+		IsOrCondition: token.IsOrCondition,
+		Line:          token.Line,
+	}, nil
 }
