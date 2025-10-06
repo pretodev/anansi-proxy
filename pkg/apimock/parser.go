@@ -243,7 +243,7 @@ func (p *Parser) parseResponseSection(tokens []Token, i *int) (ResponseSection, 
 }
 
 // parseConditionLine parses a condition line token into a ConditionLine AST node.
-// It uses the ExpressionParser to parse the condition expression.
+// It uses the ExpressionParser to parse the condition expression and validates it.
 func (p *Parser) parseConditionLine(token Token) (ConditionLine, error) {
 	parser := NewExpressionParser(token.ConditionExpression)
 	expr, err := parser.Parse()
@@ -251,9 +251,17 @@ func (p *Parser) parseConditionLine(token Token) (ConditionLine, error) {
 		return ConditionLine{}, NewParseError(p.filename, token.Line, fmt.Sprintf("invalid condition expression: %s", err.Error()))
 	}
 
-	return ConditionLine{
+	// Validate the condition expression
+	validator := NewConditionValidator()
+	conditionLine := ConditionLine{
 		Expression:    expr,
 		IsOrCondition: token.IsOrCondition,
 		Line:          token.Line,
-	}, nil
+	}
+	
+	if err := validator.ValidateConditionLine(conditionLine); err != nil {
+		return ConditionLine{}, NewParseError(p.filename, token.Line, fmt.Sprintf("condition validation error: %s", err.Error()))
+	}
+
+	return conditionLine, nil
 }

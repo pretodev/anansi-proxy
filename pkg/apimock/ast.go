@@ -401,6 +401,15 @@ func (r *ResponseSection) Validate() error {
 	if !IsValidHTTPStatusCode(r.StatusCode) {
 		return NewValidationError("StatusCode", fmt.Sprintf("invalid HTTP status code: %d (must be between %d-%d)", r.StatusCode, MinHTTPStatusCode, MaxHTTPStatusCode))
 	}
+	
+	// Validate conditions
+	if len(r.Conditions) > 0 {
+		validator := NewConditionValidator()
+		if err := validator.ValidateConditions(r.Conditions); err != nil {
+			return NewValidationError("Conditions", err.Error())
+		}
+	}
+	
 	return nil
 }
 
