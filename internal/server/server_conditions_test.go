@@ -66,6 +66,9 @@ func TestServer_ConditionEvaluation_CallCount(t *testing.T) {
 	// Manually set AST in cache since we're not loading from file
 	server.astCache["/tmp/test.apimock"] = ast
 
+	// Reset state to ensure clean test
+	server.ResetState()
+
 	// Create test server
 	ts := httptest.NewServer(http.HandlerFunc(server.createHandlerFromEndpoint(endpoints[0])))
 	defer ts.Close()
@@ -78,12 +81,12 @@ func TestServer_ConditionEvaluation_CallCount(t *testing.T) {
 		}
 		defer resp.Body.Close()
 
+		body, _ := io.ReadAll(resp.Body)
+		t.Logf("Request %d: Status=%d, Body=%s", i, resp.StatusCode, string(body))
+
 		if resp.StatusCode != 200 {
 			t.Errorf("Request %d: expected status 200, got %d", i, resp.StatusCode)
 		}
-
-		body, _ := io.ReadAll(resp.Body)
-		t.Logf("Request %d (200 OK): %s", i, string(body))
 	}
 
 	// Test: 4th call onwards should return 429
@@ -160,6 +163,9 @@ func TestServer_ConditionEvaluation_RequestHeaders(t *testing.T) {
 
 	server := New(endpoints)
 	server.astCache["/tmp/test_headers.apimock"] = ast
+
+	// Reset state to ensure clean test
+	server.ResetState()
 
 	ts := httptest.NewServer(http.HandlerFunc(server.createHandlerFromEndpoint(endpoints[0])))
 	defer ts.Close()
@@ -256,6 +262,9 @@ func TestServer_ConditionEvaluation_QueryParameters(t *testing.T) {
 	server := New(endpoints)
 	server.astCache["/tmp/test_query.apimock"] = ast
 
+	// Reset state to ensure clean test
+	server.ResetState()
+
 	ts := httptest.NewServer(http.HandlerFunc(server.createHandlerFromEndpoint(endpoints[0])))
 	defer ts.Close()
 
@@ -322,6 +331,9 @@ func TestServer_VariableInterpolation(t *testing.T) {
 
 	server := New(endpoints)
 	server.astCache["/tmp/test_interpolation.apimock"] = ast
+
+	// Reset state to ensure clean test
+	server.ResetState()
 
 	ts := httptest.NewServer(http.HandlerFunc(server.createHandlerFromEndpoint(endpoints[0])))
 	defer ts.Close()
@@ -405,6 +417,9 @@ func TestServer_ComplexConditions_BodyEvaluation(t *testing.T) {
 
 	server := New(endpoints)
 	server.astCache["/tmp/test_body.apimock"] = ast
+
+	// Reset state to ensure clean test
+	server.ResetState()
 
 	ts := httptest.NewServer(http.HandlerFunc(server.createHandlerFromEndpoint(endpoints[0])))
 	defer ts.Close()

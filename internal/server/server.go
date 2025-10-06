@@ -89,16 +89,18 @@ func (s *Server) selectResponseWithConditions(responses []endpoint.Response, req
 	ctx := apimock.NewExecutionContext(callCount, reqCtx)
 
 	// Match responses by evaluating conditions
-	for i, astResp := range ast.Responses {
-		if i >= len(responses) {
-			break
-		}
-
+	// IMPORTANT: Iterate over ast.Responses (preserves order from file)
+	// and find matching Response by status code
+	for _, astResp := range ast.Responses {
 		// If no conditions, this response always matches
 		if len(astResp.Conditions) == 0 {
-			resp := responses[i]
+			// Find response with matching status code
+			resp := s.findResponseByStatusCode(responses, astResp.StatusCode)
+			if resp == nil {
+				continue
+			}
 			resp.Body = interpolateVariables(resp.Body, ctx)
-			return resp
+			return *resp
 		}
 
 		// Create evaluator for this response
@@ -112,9 +114,13 @@ func (s *Server) selectResponseWithConditions(responses []endpoint.Response, req
 		}
 
 		if conditionsMet {
-			resp := responses[i]
+			// Find response with matching status code
+			resp := s.findResponseByStatusCode(responses, astResp.StatusCode)
+			if resp == nil {
+				continue
+			}
 			resp.Body = interpolateVariables(resp.Body, ctx)
-			return resp
+			return *resp
 		}
 	}
 
@@ -125,6 +131,16 @@ func (s *Server) selectResponseWithConditions(responses []endpoint.Response, req
 		return resp
 	}
 	return endpoint.EmptyResponse()
+}
+
+// findResponseByStatusCode finds a response with the given status code from the slice
+func (s *Server) findResponseByStatusCode(responses []endpoint.Response, statusCode int) *endpoint.Response {
+	for i := range responses {
+		if responses[i].StatusCode == statusCode {
+			return &responses[i]
+		}
+	}
+	return nil
 }
 
 // interpolateVariables replaces {{variable}} placeholders in the response body
@@ -247,6 +263,13 @@ func (s *Server) fallbackHandler() http.HandlerFunc {
 		// No fallback endpoint, return 404
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, "404 - Not Found")
+	}
+}
+
+// ResetState clears all call counts in the state manager
+func (s *Server) ResetState() {
+	if s.state != nil {
+		s.state.ResetAllCallCounts()
 	}
 }
 
