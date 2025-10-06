@@ -100,7 +100,7 @@ func TestAttribution_String(t *testing.T) {
 				Value:     NumberValue{Value: 42},
 				Variables: []string{"answer"},
 			},
-			expected: "42 >> [answer]",
+			expected: "(42 >> answer)",
 		},
 		{
 			name: "Destructuring",
@@ -108,7 +108,7 @@ func TestAttribution_String(t *testing.T) {
 				Value:     VariableReference{Name: "result"},
 				Variables: []string{"x", "y", "z"},
 			},
-			expected: "result >> [x y z]",
+			expected: "(result >> x, y, z)",
 		},
 	}
 
@@ -200,8 +200,8 @@ func TestTableValue(t *testing.T) {
 			Array:   []Value{NumberValue{Value: 1}, NumberValue{Value: 2}, NumberValue{Value: 3}},
 		}
 
-		if table.String() != "{array[3]}" {
-			t.Errorf("Expected '{array[3]}', got %q", table.String())
+		if table.String() != "[1, 2, 3]" {
+			t.Errorf("Expected '[1, 2, 3]', got %q", table.String())
 		}
 
 		if len(table.Array) != 3 {
@@ -218,8 +218,10 @@ func TestTableValue(t *testing.T) {
 			},
 		}
 
-		if table.String() != "{dict[2]}" {
-			t.Errorf("Expected '{dict[2]}', got %q", table.String())
+		// Dictionary order is not guaranteed, so check both possibilities
+		result := table.String()
+		if result != "{age = 30, name = \"Silas\"}" && result != "{name = \"Silas\", age = 30}" {
+			t.Errorf("Expected dictionary format, got %q", result)
 		}
 
 		if len(table.Dict) != 2 {
@@ -329,7 +331,7 @@ func TestFunctionCall(t *testing.T) {
 				Name:   "split",
 				Args:   []Expression{StringValue{Value: "@"}},
 			},
-			expected: "email.split(1 args)",
+			expected: "email.split(\"@\")",
 		},
 		{
 			name: "Global function",
@@ -338,7 +340,7 @@ func TestFunctionCall(t *testing.T) {
 				Name:   "random_int",
 				Args:   []Expression{NumberValue{Value: 1}, NumberValue{Value: 100}},
 			},
-			expected: ".random_int(2 args)",
+			expected: ".random_int(1, 100)",
 		},
 		{
 			name: "Function without args",
@@ -347,7 +349,7 @@ func TestFunctionCall(t *testing.T) {
 				Name:   "trim",
 				Args:   []Expression{},
 			},
-			expected: "text.trim(0 args)",
+			expected: "text.trim()",
 		},
 	}
 
