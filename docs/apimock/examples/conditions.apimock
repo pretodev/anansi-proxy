@@ -1,0 +1,125 @@
+PUT /users
+Accept: application/json
+
+{
+  "type": "object",
+  "properties": {
+    "id": { "type": "number" },
+    "name": { "type": "string" },
+    "email": { "type": "string", "format": "email" },
+    "birthdate": { "type": "string", "format": "date" },
+    "gender": { "type": "string", "enum": ["male", "female", "other"] },
+    "phoneNumber": { "type": "string" },
+    "address": {
+      "type": "object",
+      "properties": {
+        "street": { "type": "string" },
+        "city": { "type": "string" },
+        "state": { "type": "string" },
+        "zipCode": { "type": "string" },
+        "country": { "type": "string" }
+      },
+      "required": ["street", "city", "state", "zipCode", "country"]
+    },
+  },
+  "required": ["name", "email", "birthdate" ]
+}
+
+-- 500: Internal Server Error
+ContentType: application/json
+> 1..100 >> .random >> random_number
+> random_number < 10
+
+{
+  "error": "Internal Server Error",
+  "code": 500,
+  "message": "An unexpected error occurred. Please try again later.",
+  "referenceId": "ERR{{random_number}}"
+}
+
+-- 429: Too Many Requests
+ContentType: application/json
+> call_count > 5
+
+{
+  "error": "Too Many Requests",
+  "code": 429,
+  "message": "You have exceeded the rate limit. Please wait and try again later."
+}
+
+-- 401: Unauthorized
+ContentType: application/json
+> headers["Authorization"] >> bearer_token
+> bearer_token contains "Bearer "
+> bearer_token not contains "123456"
+
+{
+  "error": "Unauthorized",
+  "code": 401,
+  "message": "Authentication is required and has failed or has not yet been provided."
+}
+
+-- 409: Conflict - Email already exists
+ContentType: application/json
+> body.email is "ricardo@email.com"
+
+{
+  "error": "Conflict",
+  "code": 409,
+  "message": "The email address is already in use. Please use a different email."
+}
+
+-- 400: Bad Request - Missing required fields
+ContentType: application/json
+> not body.name 
+> or not body.email 
+> or not body.birthdate
+
+{
+  "error": "Bad Request",
+  "code": 400,
+  "message": "Missing required fields: name, email, and birthdate are required."
+}
+
+-- 400: Bad Request - Invalid email format
+ContentType: application/json
+> body.email not contains "@"
+
+{
+  "error": "Bad Request",
+  "code": 400,
+  "message": "The email address is not valid."
+}
+
+-- 400: Bad Request - Invalid age 
+ContentType: application/json
+> body.birthdate >> .split "-" >> birth_year, birth_month, birth_day
+> date >> .split "-" >> current_year, current_month, current_day
+> (current_year - birth_year) < 18
+
+{
+  "error": "Bad Request",
+  "code": 400,
+  "message": "User must be at least 18 years old."
+}
+
+-- 201: User created successfully
+ContentType: application/json
+> body.name is "Silas"
+> body.email is "silas@email.com"
+> 123 >> id
+
+{
+  "message": "User created successfully",
+  "userId": {{id}},
+}
+
+-- 200: User updated successfully
+ContentType: application/json
+> body.name is "Vanessa"
+> body.email contains "@"
+
+{
+  "message": "User updated successfully",
+  "userId": {{body.id}},
+}
