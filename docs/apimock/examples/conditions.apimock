@@ -50,8 +50,8 @@ ContentType: application/json
 -- 401: Unauthorized
 ContentType: application/json
 > headers["Authorization"] >> bearer_token
-> bearer_token contains "Bearer "
-> bearer_token not contains "123456"
+> bearer_token >> .contains "Bearer "
+> bearer_token >> .not_contains "123456"
 
 {
   "error": "Unauthorized",
@@ -61,7 +61,7 @@ ContentType: application/json
 
 -- 409: Conflict - Email already exists
 ContentType: application/json
-> body.email is "ricardo@email.com"
+> body.email == "ricardo@email.com"
 
 {
   "error": "Conflict",
@@ -83,7 +83,7 @@ ContentType: application/json
 
 -- 400: Bad Request - Invalid email format
 ContentType: application/json
-> body.email not contains "@"
+> body.email >> .not_contains "@"
 
 {
   "error": "Bad Request",
@@ -105,8 +105,8 @@ ContentType: application/json
 
 -- 201: User created successfully
 ContentType: application/json
-> body.name is "Silas"
-> body.email is "silas@email.com"
+> body.name == "Silas"
+> body.email == "silas@email.com"
 > 123 >> id
 
 {
@@ -116,8 +116,8 @@ ContentType: application/json
 
 -- 200: User updated successfully
 ContentType: application/json
-> body.name is "Vanessa"
-> body.email contains "@"
+> body.name == "Vanessa"
+> body.email >> .contains "@"
 
 {
   "message": "User updated successfully",

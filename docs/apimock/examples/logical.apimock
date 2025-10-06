@@ -1,0 +1,271 @@
+# ===========================================
+# APIMOCK LOGICAL EXPRESSIONS REFERENCE
+# ===========================================
+# This file demonstrates all logical operations and built-in functions
+# available in APIMock conditions language.
+#
+# CORE CONCEPTS:
+# - Immutable: All values are immutable
+# - Types: number, boolean, string, table
+# - Built-in functions: Called with dot notation prefix (e.g., .split, .random)
+# - Destructuring: Unpack tables into variables
+# - Ranges: Generate sequences of numbers (e.g., 1..100)
+# - Empty condition (>) returns False
+# - Multiple conditions are combined with AND logic
+
+-- 201: Logical Examples
+
+# ===========================================
+# 1. TRUTHINESS & FALSY VALUES
+# ===========================================
+
+> True                              # boolean -> True
+> 12                                # number 12 -> True
+> 23.7                              # number 23.7 -> True
+> "Vanessa"                         # string "Vanessa" -> True
+> {key = "value"}                   # table {key = "value"} -> True
+> {1, 2, 3, 4}                      # table [1, 2, 3, 4] -> True
+
+> False                             # boolean -> False
+> 0                                 # number 0 -> False
+> ""                                # string "" -> False
+> {}                                # table {} -> False
+
+>                                   # Empty condition -> False
+
+# ===========================================
+# 2. ATTRIBUTION (>>)
+# ===========================================
+
+> "Santo Amaro" >> city             # Assign string to variable -> True
+> 42 >> answer                      # Assign number to variable -> True
+> {name = "Silas", age = 30} >> user # Assign table to variable -> True
+
+# ===========================================
+# 3. LOGICAL NOT OPERATOR
+# ===========================================
+
+> not False                         # boolean -> True
+> not 0                             # number 0 -> True
+> not ""                            # string "" -> True
+> not {}                            # table {} -> True
+> not True                          # boolean -> False
+> not 12                            # number 12 -> False
+> not "Vanessa"                     # string "Vanessa" -> False
+> not {key = "value"}               # table {key = "value"} -> False
+
+# ===========================================
+# 4. COMPARISON OPERATORS
+# ===========================================
+
+> city == "Santo Amaro"             # Equals -> True
+> 7.3 != 7.4                        # Not equals -> True
+> 5 > 3                             # Greater than -> True
+> 3 < 5                             # Less than -> True
+> 5 >= 5                            # Greater than or equal to -> True
+> 4 <= 5                            # Less than or equal to -> True
+
+# ===========================================
+# 5. ARITHMETIC OPERATIONS
+# ===========================================
+
+> 8.3 >> nota1                      # Assign first grade
+> 7.5 >> nota2                      # Assign second grade
+> (nota1 + nota2) / 2 >= 7          # Average >= 7 -> True
+> 10 * 3 >> total                   # Multiplication -> 30
+> 100 - 25 >> discount              # Subtraction -> 75
+> 15 % 4 >> remainder               # Modulo -> 3
+
+# ===========================================
+# 6. STRING CONCATENATION
+# ===========================================
+
+> city .. ", Bahia" >> full_city    # Concatenation "Santo Amaro, Bahia"
+> "Hello" .. " " .. "World" >> greeting # Multiple concatenation
+
+# ===========================================
+# 7. LOGICAL OPERATORS (AND/OR)
+# ===========================================
+
+> True and False                    # -> False
+> True or False                     # -> True
+> (city == "Santo Amaro") and (nota1 > 8) # Combined conditions
+> not (False or False)              # -> True
+> (5 > 3) and (10 < 20) and ("a" == "a") # Multiple AND
+
+# ===========================================
+# 8. BUILT-IN FUNCTIONS: STRING OPERATIONS
+# ===========================================
+
+> "user@example.com" >> email
+> email >> .contains "@"                # Check if contains substring -> True
+> email >> .contains "."                # Check if contains substring -> True
+> email >> .not_contains "invalid"     # Negation with contains -> True
+
+> "Silas Ribeiro Prado" >> full_name
+> full_name >> .split " " >> first, middle, last # Destructuring: first="Silas", middle="Ribeiro", last="Prado"
+> first == "Silas"                  # -> True
+> last == "Prado"                   # -> True
+
+> "2025-10-06" >> date
+> date >> .split "-" >> year, month, day # Destructuring: year="2025", month="10", day="06"
+> year == "2025"                    # -> True
+> month == "10"                     # -> True
+
+> "  trim me  " >> text_with_spaces
+> text_with_spaces >> .trim >> trimmed # Remove whitespace
+> trimmed == "trim me"               # -> True
+
+# ===========================================
+# 9. BUILT-IN FUNCTIONS: TABLE/ARRAY OPERATIONS
+# ===========================================
+
+> {1, 2, 3, 4, 5} >> numbers
+> numbers >> .contains 3                # Element in array -> True
+> not numbers >> .contains 10           # Element not in array -> True
+
+> {name = "Silas", city = "Salvador"} >> person
+> person.name == "Silas"            # Access table property -> True
+> person.city == "Salvador"         # Access table property -> True
+
+# ===========================================
+# 10. BUILT-IN FUNCTIONS: TYPE CHECKING
+# ===========================================
+# Note: Type checking functions would be called with .is_string, .is_number, etc.
+# Examples below show how they would be used:
+
+> city >> .is_string >> is_str      # Type checking string -> True
+> nota1 >> .is_number >> is_num     # Type checking number -> True
+> True >> .is_boolean >> is_bool    # Type checking boolean -> True
+> numbers >> .is_table >> is_tbl    # Type checking table -> True
+
+# ===========================================
+# 11. BUILT-IN FUNCTIONS: MATH OPERATIONS
+# ===========================================
+
+> 8.7 >> grade
+> grade >> .round >> rounded        # Round to nearest integer -> 9
+> rounded == 9                      # -> True
+
+> 8.2 >> value
+> value >> .floor >> floored        # Floor number -> 8
+> floored == 8                      # -> True
+
+> 8.2 >> value2
+> value2 >> .ceil >> ceiled         # Ceil number -> 9
+> ceiled == 9                       # -> True
+
+> -5 >> negative
+> negative >> .abs >> absolute      # Absolute value -> 5
+> absolute == 5                     # -> True
+
+# ===========================================
+# 12. BUILT-IN FUNCTIONS: RANDOM (IMMUTABLE)
+# ===========================================
+# Random functions use deterministic seed based on request
+# Same request = same random value (reproducible for testing)
+
+> 1..100 >> range                   # Create range [1..100]
+> range >> .random >> random_num    # Random number from range
+> random_num >= 1 and random_num <= 100 # -> True
+
+> .random_bool >> is_lucky          # Random boolean
+> .random_int 1 10 >> dice          # Random int in range [1, 10]
+> dice >= 1 and dice <= 10          # -> True
+
+> .random_float 0.0 1.0 >> probability # Random float in range
+> probability >= 0.0 and probability <= 1.0 # -> True
+
+# ===========================================
+# 13. UTILS: CONTEXT/MOCK STATE
+# ===========================================
+
+> call_count >> count              # Number of times endpoint was called
+> count > 0                         # -> True (at least one call)
+
+> timestamp >> now                 # Current timestamp (ISO 8601)
+> now >> .contains "2025"               # -> True
+
+> date >> today                    # Current date (YYYY-MM-DD)
+> today >> .split "-" >> y, m, d    # Destructure date
+> y == "2025"                       # -> True
+
+# ===========================================
+# 14. REQUEST CONTEXT ACCESS
+# ===========================================
+
+> method == "POST"          # HTTP method
+> path >> .contains "/users/"   # Request path
+> headers["Content-Type"] >> content_type # Get header
+> content_type >> .contains "json"      # Check header value
+> query.page >> page        # Query parameters
+> page > 0                          # -> True
+> body.name == "Vanessa"    # Request body fields
+> body.email >> user_email
+> user_email >> .contains "@"           # Nested field access
+
+# ===========================================
+# 15. RANGES
+# ===========================================
+
+> 1..10 >> small_range              # Range from 1 to 10 [1,2,3,...,10]
+> 0..100 >> percentage              # Range from 0 to 100
+> 1..5 >> five_nums                 # Range from 1 to 5
+> five_nums >> .contains 3              # Check if in range -> True
+
+> 10..20 >> teens
+> teens >> .random >> random_teen   # Random from range [10..20]
+> random_teen >= 10 and random_teen <= 20 # -> True
+
+# ===========================================
+# 16. COMPLEX CONDITION EXAMPLES
+# ===========================================
+
+# Age calculation from birthdate
+> "1990-05-15" >> birthdate
+> .date >> current_date
+> current_date >> .split "-" >> current_y, current_m, current_d
+> birthdate >> .split "-" >> birth_y, birth_m, birth_d
+> current_y - birth_y >> age
+> age >= 18                         # Check if adult
+
+# Email validation
+> body.email >> user_email
+> user_email >> .contains "@"
+> user_email >> .contains "."
+> user_email >> .split "@" >> local, domain
+> not local == ""
+> not domain == ""                  # Valid email structure
+
+# Rate limiting with random failures
+> call_count >> calls
+> calls > 5                         # More than 5 calls
+> 1..100 >> .random >> chance
+> chance < 30                       # 30% failure after 5 calls
+
+# Geographic routing
+> headers["X-Country-Code"] >> country
+> {"BR", "AR", "CL", "UY"} >> south_america
+> south_america >> .contains country    # South America check
+
+# Multiple conditions with AND logic (Conjunction)
+> body.name >> name
+> name >> .contains "Silva"
+> body.age >> age
+> age >= 18
+> age <= 65                         # All conditions must be True
+
+# ===========================================
+# RESPONSE EXAMPLE
+# ===========================================
+
+{
+  "city": "{{city}}",
+  "full_city": "{{full_city}}",
+  "grade_average": "{{(nota1 + nota2) / 2}}",
+  "random_number": "{{random_num}}",
+  "user": {
+    "first_name": "{{first}}",
+    "last_name": "{{last}}"
+  }
+}
