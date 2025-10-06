@@ -40,6 +40,12 @@ func TestNew(t *testing.T) {
 			if sm.max != tt.max {
 				t.Errorf("New() max = %v, want %v", sm.max, tt.max)
 			}
+			if sm.callCounts == nil {
+				t.Error("New() callCounts map is nil")
+			}
+			if len(sm.callCounts) != 0 {
+				t.Errorf("New() callCounts should be empty, got %d entries", len(sm.callCounts))
+			}
 		})
 	}
 }
@@ -322,4 +328,108 @@ func BenchmarkStateManager_ConcurrentIndex(b *testing.B) {
 			_ = sm.Index()
 		}
 	})
+}
+
+func TestStateManager_CallCount(t *testing.T) {
+	t.Run("GetCallCount returns 0 for new endpoint", func(t *testing.T) {
+		sm := New(10)
+		count := sm.GetCallCount("GET /users")
+		if count != 0 {
+			t.Errorf("GetCallCount() = %v, want 0", count)
+		}
+	})
+
+	t.Run("IncrementCallCount increments and returns new value", func(t *testing.T) {
+		sm := New(10)
+		endpoint := "GET /users/{id}"
+
+		count := sm.IncrementCallCount(endpoint)
+		if count != 1 {
+			t.Errorf("IncrementCallCount() = %v, want 1", count)
+		}
+
+		count = sm.IncrementCallCount(endpoint)
+		if count != 2 {
+			t.Errorf("IncrementCallCount() = %v, want 2", count)
+		}
+
+		count = sm.GetCallCount(endpoint)
+		if count != 2 {
+			t.Errorf("GetCallCount() = %v, want 2", count)
+		}
+	})
+
+	t.Run("Different endpoints have separate counts", func(t *testing.T) {
+		sm := New(10)
+
+		sm.IncrementCallCount("GET /users")
+		sm.IncrementCallCount("GET /users")
+		sm.IncrementCallCount("POST /users")
+
+		if got := sm.GetCallCount("GET /users"); got != 2 {
+			t.Errorf("GET /users count = %v, want 2", got)
+		}
+		if got := sm.GetCallCount("POST /users"); got != 1 {
+			t.Errorf("POST /users count = %v, want 1", got)
+		}
+	})
+
+	t.Run("ResetCallCount clears count for specific endpoint", func(t *testing.T) {
+		sm := New(10)
+		endpoint := "GET /products"
+
+		sm.IncrementCallCount(endpoint)
+		sm.IncrementCallCount(endpoint)
+		sm.ResetCallCount(endpoint)
+
+		count := sm.GetCallCount(endpoint)
+		if count != 0 {
+			t.Errorf("GetCallCount() after reset = %v, want 0", count)
+		}
+	})
+
+	t.Run("ResetAllCallCounts clears all counts", func(t *testing.T) {
+		sm := New(10)
+
+		sm.IncrementCallCount("GET /users")
+		sm.IncrementCallCount("POST /users")
+		sm.IncrementCallCount("GET /products")
+
+		sm.ResetAllCallCounts()
+
+		if got := sm.GetCallCount("GET /users"); got != 0 {
+			t.Errorf("GET /users count after reset = %v, want 0", got)
+		}
+		if got := sm.GetCallCount("POST /users"); got != 0 {
+			t.Errorf("POST /users count after reset = %v, want 0", got)
+		}
+		if got := sm.GetCallCount("GET /products"); got != 0 {
+			t.Errorf("GET /products count after reset = %v, want 0", got)
+		}
+	})
+}
+
+func TestStateManager_ConcurrentCallCount(t *testing.T) {
+	sm := New(10)
+	endpoint := "GET /concurrent"
+	iterations := 1000
+
+	var wg sync.WaitGroup
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < iterations; j++ {
+				sm.IncrementCallCount(endpoint)
+			}
+		}()
+	}
+
+	wg.Wait()
+
+	expected := 10 * iterations
+	got := sm.GetCallCount(endpoint)
+	if got != expected {
+		t.Errorf("After concurrent increments: got %v, want %v", got, expected)
+	}
 }

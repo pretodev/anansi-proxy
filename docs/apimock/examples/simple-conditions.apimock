@@ -1,0 +1,30 @@
+PUT /test/conditions
+Accept: application/json
+
+-- 429: Too Many Requests
+ContentType: application/json
+> call_count > 3
+
+{
+  "error": "Too Many Requests",
+  "code": 429,
+  "call_count": {{call_count}}
+}
+
+-- 401: Unauthorized  
+ContentType: application/json
+> not headers["authorization"]
+
+{
+  "error": "Unauthorized",
+  "code": 401,
+  "message": "Missing authorization header"
+}
+
+-- 200: OK
+ContentType: application/json
+
+{
+  "message": "Success",
+  "call_count": {{call_count}}
+}

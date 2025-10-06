@@ -190,6 +190,11 @@ func (e *Evaluator) evaluateUnaryExpression(expr UnaryExpression) (interface{}, 
 
 	switch expr.Operator {
 	case "not":
+		// Handle nil as false
+		if operand == nil {
+			return true, nil
+		}
+
 		boolValue, ok := operand.(bool)
 		if !ok {
 			return nil, fmt.Errorf("'not' operator requires boolean operand, got %T", operand)
@@ -274,6 +279,17 @@ func (e *Evaluator) evaluateVariableReference(ref VariableReference) (interface{
 		value = e.context.CallCount
 	case "request":
 		value = e.context.Request
+	// Shorthand access to request properties
+	case "method":
+		value = e.context.Request.Method
+	case "path":
+		value = e.context.Request.Path
+	case "query":
+		value = e.context.Request.Query
+	case "headers":
+		value = e.context.Request.Headers
+	case "body":
+		value = e.context.Request.Body
 	default:
 		// Check user-defined variables
 		var ok bool
@@ -292,8 +308,10 @@ func (e *Evaluator) evaluateVariableReference(ref VariableReference) (interface{
 			value = e.getIndex(value, access.Key)
 		}
 
+		// If value is nil after access, return nil (key doesn't exist)
+		// Don't error - this is a valid case for existence checks
 		if value == nil {
-			return nil, fmt.Errorf("cannot access %s on nil value", access.Key)
+			return nil, nil
 		}
 	}
 
@@ -304,9 +322,17 @@ func (e *Evaluator) evaluateVariableReference(ref VariableReference) (interface{
 func (e *Evaluator) getProperty(obj interface{}, key string) interface{} {
 	switch v := obj.(type) {
 	case map[string]interface{}:
-		return v[key]
+		val, exists := v[key]
+		if !exists {
+			return nil
+		}
+		return val
 	case map[string]string:
-		return v[key]
+		val, exists := v[key]
+		if !exists {
+			return nil
+		}
+		return val
 	case *RequestContext:
 		// Special handling for RequestContext
 		switch key {
@@ -332,9 +358,17 @@ func (e *Evaluator) getProperty(obj interface{}, key string) interface{} {
 func (e *Evaluator) getIndex(obj interface{}, key string) interface{} {
 	switch v := obj.(type) {
 	case map[string]interface{}:
-		return v[key]
+		val, exists := v[key]
+		if !exists {
+			return nil
+		}
+		return val
 	case map[string]string:
-		return v[key]
+		val, exists := v[key]
+		if !exists {
+			return nil
+		}
+		return val
 	case []interface{}:
 		// Try to parse key as integer
 		if idx, err := strconv.Atoi(key); err == nil && idx >= 0 && idx < len(v) {
