@@ -87,11 +87,32 @@
 # 7. LOGICAL OPERATORS (AND/OR)
 # ===========================================
 
-> True and False                    # -> False
-> True or False                     # -> True
+# AND logic (default) - All conditions must be True
+> True
+> True                               # Both True -> Result: True
+
+> True
+> False                              # One False -> Result: False
+
+# OR logic - At least one condition must be True
+> True
+> or False                           # One True -> Result: True
+
+> False
+> or False
+> or True                            # At least one True -> Result: True
+
+# Inline operators (within single condition)
+> True and False                     # -> False
+> True or False                      # -> True
 > (city == "Santo Amaro") and (nota1 > 8) # Combined conditions
-> not (False or False)              # -> True
+> not (False or False)               # -> True
 > (5 > 3) and (10 < 20) and ("a" == "a") # Multiple AND
+
+# Practical example with OR between conditions
+> not body.name
+> or not body.email
+> or not body.birthdate              # True if ANY field is missing
 
 # ===========================================
 # 8. BUILT-IN FUNCTIONS: STRING OPERATIONS
@@ -189,6 +210,9 @@
 > date >> today                    # Current date (YYYY-MM-DD)
 > today >> .split "-" >> y, m, d    # Destructure date
 > y == "2025"                       # -> True
+
+> datetime >> current_time  # Current date and time (YYYY-MM-DDTHH:MM:SSZ)
+> current_time >> .contains "2025"  # -> True
 
 # ===========================================
 # 14. REQUEST CONTEXT ACCESS
