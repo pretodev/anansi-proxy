@@ -1,95 +1,291 @@
-(* ============================================ property_key = identifier ;
-property_value = any_char_except_EOL , { any_char_except_EOL } ;
-property = property_key , ":" , [ SP ] , property_value , EOL ;(* Basic Tokens - Characresponse_line = "--" , [ SP ] , staresponse_line = "--" , [ SP ] , status_code , ":" , [ SP ] , [ description ] , EOL ;
+(* ============================================ *)(* ============================================ property_key = identifier ;
+
+(* APIMock Language Grammar (EBNF)             *)property_value = any_char_except_EOL , { any_char_except_EOL } ;
+
+(* Version: 2.0 - With Conditions Support      *)property = property_key , ":" , [ SP ] , property_value , EOL ;(* Basic Tokens - Characresponse_line = "--" , [ SP ] , staresponse_line = "--" , [ SP ] , status_code , ":" , [ SP ] , [ description ] , EOL ;
+
+(* ============================================ *)
 
 response_body_line = any_char_exceptus_code , ":" , [ SP ] , [ description ] , EOL ;_EOL , { any_char_except_EOL } , EOL ;
+
 response_body = response_body_line , { response_body_line } ; and Whitespace   *)
-(* ============================================ *)
 
-letter = "A".."Z" | "a".."z" ;
+(* ============================================ *)(* ============================================ *)
+
+(* Basic Tokens - Characters and Whitespace   *)
+
+(* ============================================ *)letter = "A".."Z" | "a".."z" ;
+
 digit = "0".."9" ;
-SP = " " | "\t" ;
-EOL = "\n" | "\r\n" ;
 
-(* Special character classes *)
+letter = "A".."Z" | "a".."z" ;SP = " " | "\t" ;
+
+digit = "0".."9" ;EOL = "\n" | "\r\n" ;
+
+SP = " " | "\t" ;
+
+EOL = "\n" | "\r\n" ;(* Special character classes *)
+
 any_char_except_EOL = ? any character except end of line ? ;
+
+(* Special character classes *)any_char_except_EOL_or_space = ? any character except end of line or space ? ;
+
+any_char_except_EOL = ? any character except end of line ? ;
+
 any_char_except_EOL_or_space = ? any character except end of line or space ? ;
 
+any_char_except_quote = ? any character except double quote ? ;(* ============================================ *)
 
-(* ============================================ *)
 (* Primitive Elements - Simple Identifiers     *)
+
 (* ============================================ *)
 
-identifier = letter , { letter | digit | "_" | "-" | "." } ;
-status_code = digit , digit , digit ;
+(* ============================================ *)
+
+(* Primitive Elements - Simple Identifiers     *)identifier = letter , { letter | digit | "_" | "-" | "." } ;
+
+(* ============================================ *)status_code = digit , digit , digit ;
+
 description = any_char_except_EOL , { any_char_except_EOL } ;
+
+identifier = letter , { letter | digit | "_" | "-" | "." } ;blank_line = SP* , EOL ;
+
+status_code = digit , digit , digit ;blank_lines = blank_line , { blank_line } ;
+
+description = any_char_except_EOL , { any_char_except_EOL } ;
+
 blank_line = SP* , EOL ;
-blank_lines = blank_line , { blank_line } ;
 
+blank_lines = blank_line , { blank_line } ;(* ============================================ *)
 
-(* ============================================ *)
 (* HTTP Protocol Elements                      *)
+
 (* ============================================ *)
 
-http_method = "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "HEAD" | "OPTIONS" | "TRACE" | "CONNECT" ;
+(* ============================================ *)
+
+(* HTTP Protocol Elements                      *)http_method = "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "HEAD" | "OPTIONS" | "TRACE" | "CONNECT" ;
+
+(* ============================================ *)
 
 (* Path segment: can be a literal identifier or a placeholder
-   Examples: "users" or "{userId}"
+
+http_method = "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "HEAD" | "OPTIONS" | "TRACE" | "CONNECT" ;   Examples: "users" or "{userId}"
+
 *)
+
+(* Path segment: can be a literal identifier or a placeholderpath_segment = identifier | ( "{" , identifier , "}" ) ;
+
+   Examples: "users" or "{userId}"
+
+*)path_start = "/" , path_segment , { "/" , path_segment } ;
+
 path_segment = identifier | ( "{" , identifier , "}" ) ;
 
-path_start = "/" , path_segment , { "/" , path_segment } ;
-
 (* Indented continuation of path, query params, or additional query params *)
-indent = SP , { SP } ;
 
-path_continuation = indent , ( ( "/" , path_segment ) 
-                             | ( "?" , query_parameter ) 
+path_start = "/" , path_segment , { "/" , path_segment } ;indent = SP , { SP } ;
+
+
+
+(* Indented continuation of path, query params, or additional query params *)path_continuation = indent , ( ( "/" , path_segment ) 
+
+indent = SP , { SP } ;                             | ( "?" , query_parameter ) 
+
                              | ( "&" , query_parameter ) ) , EOL ;
 
+path_continuation = indent , ( ( "/" , path_segment ) 
+
+                             | ( "?" , query_parameter ) query_parameter = identifier , "=" , query_parameter_value ;
+
+                             | ( "&" , query_parameter ) ) , EOL ;query_parameter_value = any_char_except_EOL_or_space , { any_char_except_EOL_or_space } ;
+
+
+
 query_parameter = identifier , "=" , query_parameter_value ;
-query_parameter_value = any_char_except_EOL_or_space , { any_char_except_EOL_or_space } ;
 
+query_parameter_value = any_char_except_EOL_or_space , { any_char_except_EOL_or_space } ;(* ============================================ *)
 
-(* ============================================ *)
 (* Properties - Key-Value Pairs (HTTP Headers) *)
+
 (* ============================================ *)
 
-property_key = identifier ;
-property_value = any_char_except_EOL , { any_char_except_EOL } ;
+(* ============================================ *)
+
+(* Properties - Key-Value Pairs (HTTP Headers) *)property_key = identifier ;
+
+(* ============================================ *)property_value = any_char_except_EOL , { any_char_except_EOL } ;
+
 property = property_key , ":" , [ SP ] , property_value , EOL ;
 
+property_key = identifier ;
 
-(* ============================================ *)
+property_value = any_char_except_EOL , { any_char_except_EOL } ;
+
+property = property_key , ":" , [ SP ] , property_value , EOL ;(* ============================================ *)
+
 (* Request Components                          *)
+
 (* ============================================ *)
 
-(* Method line: defines HTTP method and path
-   Example: POST /api/users
-*)
-method_line = [ http_method , SP ] , path_start , EOL , { path_continuation } ;
+(* ============================================ *)
 
-(* Body can be JSON schema, XML schema, plain text, etc. *)
-body_line = any_char_except_EOL , { any_char_except_EOL } , EOL ;
+(* Request Components                          *)(* Method line: defines HTTP method and path
+
+(* ============================================ *)   Example: POST /api/users
+
+*)
+
+(* Method line: defines HTTP method and pathmethod_line = [ http_method , SP ] , path_start , EOL , { path_continuation } ;
+
+   Example: POST /api/users
+
+*)(* Body can be JSON schema, XML schema, plain text, etc. *)
+
+method_line = [ http_method , SP ] , path_start , EOL , { path_continuation } ;body_line = any_char_except_EOL , { any_char_except_EOL } , EOL ;
+
 body = body_line , { body_line } ;
 
-(* Request section: complete HTTP request structure *)
-request_section = method_line ,
+(* Body can be JSON schema, XML schema, plain text, etc. *)
+
+body_line = any_char_except_EOL , { any_char_except_EOL } , EOL ;(* Request section: complete HTTP request structure *)
+
+body = body_line , { body_line } ;request_section = method_line ,
+
                   { property } ,
-                  [ blank_line , body ] ;
+
+(* Request section: complete HTTP request structure *)                  [ blank_line , body ] ;
+
+request_section = method_line ,
+
+                  { property } ,
+
+                  [ blank_line , body ] ;(* ============================================ *)
+
+(* Response Components                         *)
+
+(* ============================================ *)
+
+(* ============================================ *)
+
+(* Conditions Language - Values and Literals   *)response_line = "--" , [ SP ] , status_code , ":" , [ SP ] , [ description ] , EOL ;
+
+(* ============================================ *)
+
+response_body_line = any_char_except_EOL , { any_char_except_EOL } , EOL ;
+
+(* Numbers: integers and floats *)response_body = response_body_line , { response_body_line } ;
+
+number = [ "-" ] , digit , { digit } , [ "." , digit , { digit } ] ;
+
+(* Response section: complete HTTP response structure *)
+
+(* Booleans *)response_section = response_line ,
+
+boolean = "True" | "False" ;                   { property } ,
+
+                   [ blank_line , response_body ] ;
+
+(* Strings: enclosed in double quotes *)
+
+string = '"' , { any_char_except_quote } , '"' ;
+
+(* ============================================ *)
+
+(* Ranges: number..number *)(* Root Rule - Complete APIMock File           *)
+
+range = number , ".." , number ;(* ============================================ *)
+
+
+
+(* Table key-value pair *)apimock = [ request_section , blank_lines ] , 
+
+table_pair = identifier , "=" , value ;          response_section , 
+
+          { blank_lines , response_section } ;
+(* Table array element *)
+table_element = value ;
+
+(* Table: can be array-style or dictionary-style *)
+table_content = table_pair , { "," , table_pair }
+              | table_element , { "," , table_element }
+              | (* empty *) ;
+
+table = "{" , [ SP ] , [ table_content ] , [ SP ] , "}" ;
 
 
 (* ============================================ *)
-(* Response Components                         *)
+(* Conditions Language - Expressions           *)
+(* ============================================ *)
+
+(* Comments start with # *)
+comment = "#" , { any_char_except_EOL } ;
+
+(* Variable names and context access *)
+variable = identifier , { "." , identifier | "[" , string , "]" } ;
+
+(* Built-in functions start with dot *)
+function_name = "." , identifier ;
+
+(* Function arguments *)
+function_args = value , { SP , value } ;
+
+(* Function call *)
+function_call = function_name , [ SP , function_args ] ;
+
+(* Primitive values *)
+value = number
+      | boolean
+      | string
+      | range
+      | table
+      | variable
+      | function_call
+      | "(" , expression , ")" ;
+
+(* Operators *)
+arithmetic_op = "+" | "-" | "*" | "/" | "%" | "//" ;
+comparison_op = "==" | "!=" | ">=" | "<=" | ">" | "<" ;
+string_op = ".." ;
+logical_op = "and" | "or" ;
+unary_op = "not" ;
+attribution_op = ">>" ;
+
+(* Factor: unary operations and values *)
+factor = [ unary_op , SP ] , value , { ( arithmetic_op | string_op ) , SP , value } ;
+
+(* Term: comparisons *)
+term = factor , [ SP , comparison_op , SP , factor ] ;
+
+(* Attribution: assigns result to variables (supports destructuring) *)
+variable_list = identifier , { "," , SP , identifier } ;
+attribution = term , [ SP , attribution_op , SP , variable_list ] ;
+
+(* Expression: logical operations *)
+expression = attribution , { SP , logical_op , SP , attribution } ;
+
+(* Condition line: starts with > and optional expression *)
+condition_operator = ">" ;
+or_operator = "or" ;
+
+condition_line = condition_operator , [ SP , [ or_operator , SP ] , expression ] , [ SP , comment ] , EOL ;
+
+
+(* ============================================ *)
+(* Response Components (with Conditions)       *)
 (* ============================================ *)
 
 response_line = "--" , [ SP ] , status_code , ":" , [ SP ] , [ description ] , EOL ;
 
+(* Conditions block: one or more condition lines before response properties *)
+conditions_block = condition_line , { condition_line } ;
+
 response_body_line = any_char_except_EOL , { any_char_except_EOL } , EOL ;
 response_body = response_body_line , { response_body_line } ;
 
-(* Response section: complete HTTP response structure *)
+(* Response section: now includes optional conditions *)
 response_section = response_line ,
+                   [ conditions_block ] ,
                    { property } ,
                    [ blank_line , response_body ] ;
 
