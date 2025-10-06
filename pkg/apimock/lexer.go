@@ -23,6 +23,8 @@ const (
 	TokenHeader
 	// TokenResponseStart represents the start of a response section (-- code: description)
 	TokenResponseStart
+	// TokenConditionLine represents a condition line (starts with >)
+	TokenConditionLine
 	// TokenBodyLine represents a line of body content (request or response)
 	TokenBodyLine
 )
@@ -49,6 +51,10 @@ type Token struct {
 	// Response start
 	StatusCode  int
 	Description string
+
+	// Condition line
+	ConditionExpression string // The full condition expression after >
+	IsOrCondition       bool   // true if line starts with "> or"
 }
 
 // Regular expressions used by the lexer for pattern matching
@@ -67,6 +73,10 @@ var (
 	responseLineCaptureRegex = regexp.MustCompile(`^--\s*(\d{3}):\s*(.*)`)
 	// propertyCaptureRegex matches header-like properties (Key: Value)
 	propertyCaptureRegex = regexp.MustCompile(`^([a-zA-Z][a-zA-Z0-9_.\-]*):\s*(.+)`)
+	// conditionLineRegex matches condition lines (> expression or > or expression)
+	conditionLineRegex = regexp.MustCompile(`^>\s*(.*)`)
+	// conditionOrRegex checks if condition starts with "or" keyword
+	conditionOrRegex = regexp.MustCompile(`^or\s+(.+)`)
 )
 
 // Lexer reads .apimock file lines and produces a stream of tokens.
@@ -108,6 +118,32 @@ func (l *Lexer) Lex() ([]Token, error) {
 				Raw:         line,
 				StatusCode:  code,
 				Description: strings.TrimSpace(m[2]),
+			})
+			continue
+		}
+
+		// Condition line (must come before Header check to avoid conflicts)
+		if m := conditionLineRegex.FindStringSubmatch(line); m != nil {
+			expression := strings.TrimSpace(m[1])
+
+			// Remove inline comments (everything after #)
+			if commentIdx := strings.Index(expression, "#"); commentIdx != -1 {
+				expression = strings.TrimSpace(expression[:commentIdx])
+			}
+
+			// Check if it's an OR condition
+			isOrCondition := false
+			if orMatch := conditionOrRegex.FindStringSubmatch(expression); orMatch != nil {
+				isOrCondition = true
+				expression = strings.TrimSpace(orMatch[1])
+			}
+
+			tokens = append(tokens, Token{
+				Type:                TokenConditionLine,
+				Line:                i + 1,
+				Raw:                 line,
+				ConditionExpression: expression,
+				IsOrCondition:       isOrCondition,
 			})
 			continue
 		}
