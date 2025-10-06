@@ -27,7 +27,7 @@ Accept: application/json
 
 -- 500: Internal Server Error
 ContentType: application/json
-> 1..100 >> .random >> random_number
+> .random_int 5 100 >> random_number
 > random_number < 10
 
 {

@@ -186,10 +186,6 @@
 # Random functions use deterministic seed based on request
 # Same request = same random value (reproducible for testing)
 
-> 1..100 >> range                   # Create range [1..100]
-> range >> .random >> random_num    # Random number from range
-> random_num >= 1 and random_num <= 100 # -> True
-
 > .random_bool >> is_lucky          # Random boolean
 > .random_int 1 10 >> dice          # Random int in range [1, 10]
 > dice >= 1 and dice <= 10          # -> True
