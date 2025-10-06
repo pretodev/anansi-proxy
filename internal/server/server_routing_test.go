@@ -15,12 +15,14 @@ func createEndpointWithFile(route string, statusCode int, body string) *endpoint
 		Schema: &endpoint.EndpointSchema{
 			Route:  route,
 			Accept: "application/json",
-			Responses: []endpoint.Response{
-				{
-					Title:       "Test Response",
-					Body:        body,
-					ContentType: "application/json",
-					StatusCode:  statusCode,
+			Responses: map[int][]endpoint.Response{
+				statusCode: {
+					{
+						Title:       "Test Response",
+						Body:        body,
+						ContentType: "application/json",
+						StatusCode:  statusCode,
+					},
 				},
 			},
 		},
@@ -296,12 +298,14 @@ func TestServer_ContentTypeHeader(t *testing.T) {
 		Schema: &endpoint.EndpointSchema{
 			Route:  "GET /api/xml",
 			Accept: "application/xml",
-			Responses: []endpoint.Response{
-				{
-					Title:       "XML Response",
-					Body:        `<root><data>test</data></root>`,
-					ContentType: "application/xml",
-					StatusCode:  200,
+			Responses: map[int][]endpoint.Response{
+				200: {
+					{
+						Title:       "XML Response",
+						Body:        `<root><data>test</data></root>`,
+						ContentType: "application/xml",
+						StatusCode:  200,
+					},
 				},
 			},
 		},
@@ -327,12 +331,14 @@ func TestServer_EmptyContentType(t *testing.T) {
 		Schema: &endpoint.EndpointSchema{
 			Route:  "GET /api/plain",
 			Accept: "text/plain",
-			Responses: []endpoint.Response{
-				{
-					Title:       "Plain Response",
-					Body:        `Hello World`,
-					ContentType: "", // No content type
-					StatusCode:  200,
+			Responses: map[int][]endpoint.Response{
+				200: {
+					{
+						Title:       "Plain Response",
+						Body:        `Hello World`,
+						ContentType: "", // No content type
+						StatusCode:  200,
+					},
 				},
 			},
 		},
@@ -496,12 +502,14 @@ func TestServer_RequestValidation_JSON(t *testing.T) {
 			Accept:    "application/json",
 			Body:      schema,
 			Validator: validator,
-			Responses: []endpoint.Response{
-				{
-					Title:       "User created",
-					Body:        `{"id": 123, "name": "John"}`,
-					ContentType: "application/json",
-					StatusCode:  201,
+			Responses: map[int][]endpoint.Response{
+				201: {
+					{
+						Title:       "User created",
+						Body:        `{"id": 123, "name": "John"}`,
+						ContentType: "application/json",
+						StatusCode:  201,
+					},
 				},
 			},
 		},
@@ -598,12 +606,14 @@ func TestServer_RequestValidation_XML(t *testing.T) {
 			Accept:    "application/xml",
 			Body:      schema,
 			Validator: validator,
-			Responses: []endpoint.Response{
-				{
-					Title:       "User created",
-					Body:        `<user><name>John</name><age>30</age></user>`,
-					ContentType: "application/xml",
-					StatusCode:  201,
+			Responses: map[int][]endpoint.Response{
+				201: {
+					{
+						Title:       "User created",
+						Body:        `<user><name>John</name><age>30</age></user>`,
+						ContentType: "application/xml",
+						StatusCode:  201,
+					},
 				},
 			},
 		},
@@ -671,12 +681,14 @@ func TestServer_NoValidation_WhenNoValidator(t *testing.T) {
 			Route:     "POST /api/data",
 			Accept:    "application/json",
 			Validator: nil, // No validator
-			Responses: []endpoint.Response{
-				{
-					Title:       "Success",
-					Body:        `{"success": true}`,
-					ContentType: "application/json",
-					StatusCode:  200,
+			Responses: map[int][]endpoint.Response{
+				200: {
+					{
+						Title:       "Success",
+						Body:        `{"success": true}`,
+						ContentType: "application/json",
+						StatusCode:  200,
+					},
 				},
 			},
 		},

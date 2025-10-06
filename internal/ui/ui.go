@@ -67,7 +67,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.cursor--
 			}
 		case key.Matches(msg, m.keys.Down):
-			if m.cursor < len(m.endpoint.Responses)-1 {
+			if m.cursor < m.endpoint.CountResponses()-1 {
 				m.cursor++
 			}
 		}

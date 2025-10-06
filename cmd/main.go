@@ -76,14 +76,19 @@ func main() {
 	fmt.Printf("\nServer ready! Serving %d endpoint(s):\n", len(endpoints))
 
 	for i, ep := range endpoints {
-		firstResponse := ep.Schema.Responses[0]
-		fmt.Printf("  [%d] %s -> [%d] %s\n", i, ep.Schema.Route, firstResponse.StatusCode, firstResponse.Title)
+		responses := ep.Schema.SliceResponses()
+		if len(responses) > 0 {
+			firstResponse := responses[0]
+			fmt.Printf("  [%d] %s -> [%d] %s\n", i, ep.Schema.Route, firstResponse.StatusCode, firstResponse.Title)
+		} else {
+			fmt.Printf("  [%d] %s -> (no responses)\n", i, ep.Schema.Route)
+		}
 	}
 	select {}
 }
 
 func runInteractiveMode(endpoint *endpoint.EndpointSchema, port int) {
-	sm := state.New(len(endpoint.Responses))
+	sm := state.New(endpoint.CountResponses())
 
 	httpSrv := server.NewInteractive(sm, endpoint)
 	go func() {

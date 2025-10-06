@@ -35,28 +35,39 @@ func New(endpoints []*endpoint.EndpointWithFile) *Server {
 
 func (s *Server) createHandlerFromEndpoint(ep *endpoint.EndpointWithFile) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Get the first available response (prioritize 200 OK if available, otherwise use first in map)
 		resp := endpoint.EmptyResponse()
-		if r, ok := ep.Schema.GetResponseByStatusCode(http.StatusOK); ok {
-			resp = r
+		if okResp, ok := ep.Schema.GetResponseByStatusCode(http.StatusOK); ok {
+			resp = okResp
+		} else {
+			// If no 200 OK response, use the first available response
+			responses := ep.Schema.SliceResponses()
+			if len(responses) > 0 {
+				resp = responses[0]
+			}
 		}
 
 		if ep.Schema.Validator != nil {
-			badResp, hasBadResp := ep.Schema.GetResponseByStatusCode(http.StatusBadRequest)
-
 			bodyBytes, err := io.ReadAll(r.Body)
-
-			if err != nil && !hasBadResp {
-				http.Error(w, fmt.Sprintf("Failed to read request body: %v", err), http.StatusBadRequest)
-				return
-			}
-
 			defer r.Body.Close()
-			if err := ep.Schema.Validator.Validate(string(bodyBytes)); err != nil && !hasBadResp {
-				http.Error(w, fmt.Sprintf("Request validation failed: %v", err), http.StatusBadRequest)
-				return
-			}
 
-			resp = badResp
+			if err != nil {
+				badResp, hasBadResp := ep.Schema.GetResponseByStatusCode(http.StatusBadRequest)
+				if hasBadResp {
+					resp = badResp
+				} else {
+					http.Error(w, fmt.Sprintf("Failed to read request body: %v", err), http.StatusBadRequest)
+					return
+				}
+			} else if err := ep.Schema.Validator.Validate(string(bodyBytes)); err != nil {
+				badResp, hasBadResp := ep.Schema.GetResponseByStatusCode(http.StatusBadRequest)
+				if hasBadResp {
+					resp = badResp
+				} else {
+					http.Error(w, fmt.Sprintf("Request validation failed: %v", err), http.StatusBadRequest)
+					return
+				}
+			}
 		}
 
 		if resp.ContentType != "" {
@@ -73,9 +84,16 @@ func (s *Server) fallbackHandler() http.HandlerFunc {
 		if len(s.fallbackEndpoints) > 0 {
 			ep := s.fallbackEndpoints[0]
 
+			// Get the first available response (prioritize 200 OK if available, otherwise use first in map)
 			resp := endpoint.EmptyResponse()
-			if r, ok := ep.Schema.GetResponseByStatusCode(http.StatusOK); ok {
-				resp = r
+			if okResp, ok := ep.Schema.GetResponseByStatusCode(http.StatusOK); ok {
+				resp = okResp
+			} else {
+				// If no 200 OK response, use the first available response
+				responses := ep.Schema.SliceResponses()
+				if len(responses) > 0 {
+					resp = responses[0]
+				}
 			}
 
 			if resp.ContentType != "" {

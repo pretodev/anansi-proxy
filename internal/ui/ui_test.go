@@ -15,24 +15,30 @@ func createTestEndpoint() *endpoint.EndpointSchema {
 		Route:  "/api/test",
 		Accept: "application/json",
 		Body:   "{}",
-		Responses: []endpoint.Response{
-			{
-				Title:       "Success",
-				Body:        `{"status": "ok"}`,
-				ContentType: "application/json",
-				StatusCode:  200,
+		Responses: map[int][]endpoint.Response{
+			200: {
+				{
+					Title:       "Success",
+					Body:        `{"status": "ok"}`,
+					ContentType: "application/json",
+					StatusCode:  200,
+				},
 			},
-			{
-				Title:       "Not Found",
-				Body:        `{"error": "not found"}`,
-				ContentType: "application/json",
-				StatusCode:  404,
+			404: {
+				{
+					Title:       "Not Found",
+					Body:        `{"error": "not found"}`,
+					ContentType: "application/json",
+					StatusCode:  404,
+				},
 			},
-			{
-				Title:       "Server Error",
-				Body:        `{"error": "internal server error"}`,
-				ContentType: "application/json",
-				StatusCode:  500,
+			500: {
+				{
+					Title:       "Server Error",
+					Body:        `{"error": "internal server error"}`,
+					ContentType: "application/json",
+					StatusCode:  500,
+				},
 			},
 		},
 	}
@@ -287,7 +293,7 @@ func TestModel_View_EmptyResponses(t *testing.T) {
 		Route:     "/api/test",
 		Accept:    "application/json",
 		Body:      "{}",
-		Responses: []endpoint.Response{},
+		Responses: map[int][]endpoint.Response{},
 	}
 	m := initialModel(sm, ep)
 
@@ -308,12 +314,14 @@ func TestModel_View_SingleResponse(t *testing.T) {
 		Route:  "/api/test",
 		Accept: "application/json",
 		Body:   "{}",
-		Responses: []endpoint.Response{
-			{
-				Title:       "Only Response",
-				Body:        `{"status": "ok"}`,
-				ContentType: "application/json",
-				StatusCode:  200,
+		Responses: map[int][]endpoint.Response{
+			200: {
+				{
+					Title:       "Only Response",
+					Body:        `{"status": "ok"}`,
+					ContentType: "application/json",
+					StatusCode:  200,
+				},
 			},
 		},
 	}
@@ -441,7 +449,7 @@ func TestModel_Update_NavigationBoundaries(t *testing.T) {
 		updatedModel, _ := m.Update(msgDown)
 		m = updatedModel.(model)
 	}
-	maxIndex := len(ep.Responses) - 1
+	maxIndex := ep.CountResponses() - 1
 	if m.cursor != maxIndex {
 		t.Errorf("cursor should stay at %d after multiple downs, got %d", maxIndex, m.cursor)
 	}
