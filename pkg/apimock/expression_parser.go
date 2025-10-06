@@ -89,6 +89,60 @@ func (p *ExpressionParser) parseAttribution() (Expression, error) {
 	if p.peek() == ">>" {
 		p.consume() // consume '>>'
 
+		// Check if next token is a function call (. followed by identifier)
+		if p.peek() == "." && p.pos+1 < len(p.tokens) && isIdentifier(p.tokens[p.pos+1]) {
+			// Parse as function call with left as target
+			p.consume() // consume '.'
+			funcName := p.peek()
+			p.consume() // consume function name
+
+			// Parse function arguments
+			args := make([]Expression, 0)
+			for !p.isEnd() && !isOperator(p.peek()) && p.peek() != "," && p.peek() != ">>" && p.peek() != ")" && p.peek() != "]" {
+				arg, err := p.parsePrimary()
+				if err != nil {
+					break
+				}
+				args = append(args, arg)
+			}
+
+			funcCall := FunctionCall{
+				Target: left,
+				Name:   funcName,
+				Args:   args,
+			}
+
+			// Check if there's another >> for variable assignment
+			if p.peek() == ">>" {
+				p.consume() // consume '>>'
+
+				// Parse variable list (supports destructuring)
+				variables := make([]string, 0)
+				for {
+					varName := p.peek()
+					if !isIdentifier(varName) {
+						return nil, fmt.Errorf("expected variable name after >>, got %q", varName)
+					}
+					variables = append(variables, varName)
+					p.consume()
+
+					if p.peek() == "," {
+						p.consume() // consume ','
+						continue
+					}
+					break
+				}
+
+				return Attribution{
+					Value:     funcCall,
+					Variables: variables,
+				}, nil
+			}
+
+			// Return just the function call (no variable assignment)
+			return funcCall, nil
+		}
+
 		// Parse variable list (supports destructuring)
 		variables := make([]string, 0)
 		for {
@@ -291,7 +345,7 @@ func (p *ExpressionParser) parsePrimary() (Expression, error) {
 	}
 
 	// Global function calls (e.g., .random_int 1 100)
-	if strings.HasPrefix(token, ".") {
+	if token == "." && p.pos+1 < len(p.tokens) && isIdentifier(p.tokens[p.pos+1]) {
 		return p.parseGlobalFunction()
 	}
 
@@ -423,9 +477,9 @@ func (p *ExpressionParser) parseVariableOrFunction() (Expression, error) {
 
 // parseGlobalFunction parses a global function call (e.g., .random_int 1 100).
 func (p *ExpressionParser) parseGlobalFunction() (Expression, error) {
-	token := p.peek()
-	funcName := token[1:] // Remove the dot
-	p.consume()
+	p.consume() // consume '.'
+	funcName := p.peek()
+	p.consume() // consume function name
 
 	// Parse function arguments
 	args := make([]Expression, 0)
@@ -579,8 +633,7 @@ var tokenPatterns = []struct {
 	{`<=`, false},                    // Less equal
 	{`\.\.`, true},                   // Range/concat operator
 	{`//`, false},                    // Integer division
-	{`\.\w+`, true},                  // Global function (.func)
-	{`[+\-*/%(),\[\]{}.<>=]`, true},  // Single char operators
+	{`[+\-*/%(),\[\]{}.<>=]`, true},  // Single char operators (including .)
 }
 
 func tokenizeExpression(input string) []string {
@@ -622,17 +675,6 @@ func tokenizeExpression(input string) []string {
 		if input[i] >= '0' && input[i] <= '9' {
 			end := i
 			for end < len(input) && ((input[end] >= '0' && input[end] <= '9') || input[end] == '.') {
-				end++
-			}
-			tokens = append(tokens, input[i:end])
-			i = end
-			continue
-		}
-
-		// Try global function (.func_name)
-		if input[i] == '.' && i+1 < len(input) && ((input[i+1] >= 'a' && input[i+1] <= 'z') || (input[i+1] >= 'A' && input[i+1] <= 'Z') || input[i+1] == '_') {
-			end := i + 1
-			for end < len(input) && ((input[end] >= 'a' && input[end] <= 'z') || (input[end] >= 'A' && input[end] <= 'Z') || (input[end] >= '0' && input[end] <= '9') || input[end] == '_') {
 				end++
 			}
 			tokens = append(tokens, input[i:end])

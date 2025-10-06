@@ -20,7 +20,7 @@ Accept: application/json
         "country": { "type": "string" }
       },
       "required": ["street", "city", "state", "zipCode", "country"]
-    },
+    }
   },
   "required": ["name", "email", "birthdate" ]
 }
@@ -111,7 +111,7 @@ ContentType: application/json
 
 {
   "message": "User created successfully",
-  "userId": {{id}},
+  "userId": {{id}}
 }
 
 -- 200: User updated successfully
@@ -121,5 +121,5 @@ ContentType: application/json
 
 {
   "message": "User updated successfully",
-  "userId": {{body.id}},
+  "userId": {{body.id}}
 }
