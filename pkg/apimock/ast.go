@@ -69,13 +69,206 @@ func (ps PathSegment) String() string {
 	return ps.Value
 }
 
+// ============================================
+// Conditions AST - Represents conditional logic
+// ============================================
+
+// ConditionLine represents a single condition line in a response.
+// Multiple condition lines are combined with AND logic by default,
+// or OR logic if IsOrCondition is true.
+type ConditionLine struct {
+	Expression    Expression // The condition expression to evaluate
+	IsOrCondition bool       // true if this line starts with "or" keyword
+	Line          int        // Source line number for error reporting
+}
+
+// Expression represents a complete conditional expression.
+// It can be a simple value or a complex expression with operators.
+type Expression interface {
+	// String returns a string representation of the expression
+	String() string
+}
+
+// BinaryExpression represents an expression with a binary operator (e.g., a + b, x == y).
+type BinaryExpression struct {
+	Left     Expression
+	Operator string // Operators: +, -, *, /, %, //, .., ==, !=, >, <, >=, <=, and, or
+	Right    Expression
+}
+
+func (e BinaryExpression) String() string {
+	return fmt.Sprintf("(%s %s %s)", e.Left.String(), e.Operator, e.Right.String())
+}
+
+// UnaryExpression represents an expression with a unary operator (e.g., not x).
+type UnaryExpression struct {
+	Operator string // Operator: not
+	Operand  Expression
+}
+
+func (e UnaryExpression) String() string {
+	return fmt.Sprintf("(%s %s)", e.Operator, e.Operand.String())
+}
+
+// Attribution represents variable assignment with the >> operator.
+// Supports destructuring: value >> var1, var2, var3
+type Attribution struct {
+	Value     Expression
+	Variables []string // Variable names to assign to (supports destructuring)
+}
+
+func (a Attribution) String() string {
+	return fmt.Sprintf("%s >> %v", a.Value.String(), a.Variables)
+}
+
+// Value represents primitive values and complex data structures.
+type Value interface {
+	Expression
+	// GetValue returns the underlying value
+	GetValue() interface{}
+}
+
+// NumberValue represents a numeric literal (integer or float).
+type NumberValue struct {
+	Value float64
+}
+
+func (n NumberValue) String() string {
+	return fmt.Sprintf("%v", n.Value)
+}
+
+func (n NumberValue) GetValue() interface{} {
+	return n.Value
+}
+
+// BooleanValue represents a boolean literal (True or False).
+type BooleanValue struct {
+	Value bool
+}
+
+func (b BooleanValue) String() string {
+	if b.Value {
+		return "True"
+	}
+	return "False"
+}
+
+func (b BooleanValue) GetValue() interface{} {
+	return b.Value
+}
+
+// StringValue represents a string literal.
+type StringValue struct {
+	Value string
+}
+
+func (s StringValue) String() string {
+	return fmt.Sprintf(`"%s"`, s.Value)
+}
+
+func (s StringValue) GetValue() interface{} {
+	return s.Value
+}
+
+// TableValue represents a table (array or dictionary).
+type TableValue struct {
+	IsArray bool             // true for array-style, false for dict-style
+	Array   []Value          // Array elements
+	Dict    map[string]Value // Dictionary key-value pairs
+}
+
+func (t TableValue) String() string {
+	if t.IsArray {
+		return fmt.Sprintf("{array[%d]}", len(t.Array))
+	}
+	return fmt.Sprintf("{dict[%d]}", len(t.Dict))
+}
+
+func (t TableValue) GetValue() interface{} {
+	if t.IsArray {
+		return t.Array
+	}
+	return t.Dict
+}
+
+// RangeValue represents a numeric range (e.g., 1..10).
+type RangeValue struct {
+	Start float64
+	End   float64
+}
+
+func (r RangeValue) String() string {
+	return fmt.Sprintf("%.0f..%.0f", r.Start, r.End)
+}
+
+func (r RangeValue) GetValue() interface{} {
+	return r
+}
+
+// VariableReference represents a reference to a variable or context value.
+// Examples: call_count, body.email, headers["Authorization"]
+type VariableReference struct {
+	Name       string   // Base variable name (e.g., "body", "headers")
+	AccessPath []Access // Chain of property/index accesses
+}
+
+// Access represents a single property or index access.
+type Access struct {
+	Type AccessType // Property (dot notation) or Index (bracket notation)
+	Key  string     // Property name or index key
+}
+
+// AccessType defines how a value is accessed.
+type AccessType int
+
+const (
+	PropertyAccess AccessType = iota // Dot notation: obj.property
+	IndexAccess                      // Bracket notation: obj["key"]
+)
+
+func (v VariableReference) String() string {
+	s := v.Name
+	for _, access := range v.AccessPath {
+		if access.Type == PropertyAccess {
+			s += "." + access.Key
+		} else {
+			s += "[\"" + access.Key + "\"]"
+		}
+	}
+	return s
+}
+
+func (v VariableReference) GetValue() interface{} {
+	return v
+}
+
+// FunctionCall represents a built-in function call.
+// Functions start with dot (e.g., .split, .contains, .random_int).
+type FunctionCall struct {
+	Target Expression   // The value to operate on (can be nil for global functions)
+	Name   string       // Function name without the dot
+	Args   []Expression // Function arguments
+}
+
+func (f FunctionCall) String() string {
+	if f.Target != nil {
+		return fmt.Sprintf("%s.%s(%d args)", f.Target.String(), f.Name, len(f.Args))
+	}
+	return fmt.Sprintf(".%s(%d args)", f.Name, len(f.Args))
+}
+
+func (f FunctionCall) GetValue() interface{} {
+	return f
+}
+
 // ResponseSection represents one HTTP response definition.
 // Each response includes a status code, optional description,
-// properties, and response body content.
+// properties, optional conditions, and response body content.
 type ResponseSection struct {
 	StatusCode  int               // HTTP status code (200, 404, etc.)
 	Description string            // Optional description
 	Properties  map[string]string // Response Properties
+	Conditions  []ConditionLine   // Optional condition lines
 	Body        string            // Response body content
 }
 
@@ -120,10 +313,11 @@ func (r *RequestSection) HasPathParameters() bool {
 }
 
 // NewResponseSection creates a new empty response section.
-// The Headers map is initialized to an empty map.
+// The Properties map and Conditions slice are initialized to empty.
 func NewResponseSection() ResponseSection {
 	return ResponseSection{
 		Properties: make(map[string]string),
+		Conditions: make([]ConditionLine, 0),
 	}
 }
 
