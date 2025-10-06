@@ -277,16 +277,17 @@ condition_line = condition_operator , [ SP , [ or_operator , SP ] , expression ]
 
 response_line = "--" , [ SP ] , status_code , ":" , [ SP ] , [ description ] , EOL ;
 
-(* Conditions block: one or more condition lines before response properties *)
+(* Conditions block: one or more condition lines after response properties *)
 conditions_block = condition_line , { condition_line } ;
 
 response_body_line = any_char_except_EOL , { any_char_except_EOL } , EOL ;
 response_body = response_body_line , { response_body_line } ;
 
-(* Response section: now includes optional conditions *)
+(* Response section: now includes optional conditions 
+   Order: response_line -> properties -> conditions -> body *)
 response_section = response_line ,
-                   [ conditions_block ] ,
                    { property } ,
+                   [ conditions_block ] ,
                    [ blank_line , response_body ] ;
 
 
